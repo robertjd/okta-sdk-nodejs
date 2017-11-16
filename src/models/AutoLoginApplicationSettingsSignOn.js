@@ -17,10 +17,12 @@ var Resource = require('../resource');
 
 
 /**
- * @class PublicSignOnModeMediated
+ * @class AutoLoginApplicationSettingsSignOn
  * @extends Resource
+ * @property { string } loginUrl
+ * @property { string } redirectUrl
  */
-class PublicSignOnModeMediated extends Resource {
+class AutoLoginApplicationSettingsSignOn extends Resource {
   constructor(resourceJson, client) {
     super(resourceJson, client);
 
@@ -28,4 +30,4 @@ class PublicSignOnModeMediated extends Resource {
 
 }
 
-module.exports = PublicSignOnModeMediated;
+module.exports = AutoLoginApplicationSettingsSignOn;

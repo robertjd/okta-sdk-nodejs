@@ -15,23 +15,17 @@
 
 var Resource = require('../resource');
 const ApplicationSettingsNotifications = require('./ApplicationSettingsNotifications');
-const PublicSignOnModeMediated = require('./PublicSignOnModeMediated');
 
 /**
  * @class ApplicationSettings
  * @extends Resource
- * @property { boolean } manualProvisioning
  * @property { ApplicationSettingsNotifications } notifications
- * @property { PublicSignOnModeMediated } signOn
  */
 class ApplicationSettings extends Resource {
   constructor(resourceJson, client) {
     super(resourceJson, client);
     if (resourceJson && resourceJson.notifications) {
       this.notifications = new ApplicationSettingsNotifications(this.notifications);
-    }
-    if (resourceJson && resourceJson.signOn) {
-      this.signOn = new PublicSignOnModeMediated(this.signOn);
     }
   }
 

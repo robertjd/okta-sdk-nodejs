@@ -14,18 +14,18 @@
 /* THIS FILE IS AUTO-GENERATED - SEE CONTRIBUTOR DOCUMENTATION */
 
 var ApplicationSettings = require('./ApplicationSettings');
-const WsFederationSignOn = require('./WsFederationSignOn');
+const WsFederationApplicationSettingsApplication = require('./WsFederationApplicationSettingsApplication');
 
 /**
  * @class WsFederationApplicationSettings
  * @extends ApplicationSettings
- * @property { WsFederationSignOn } signOn
+ * @property { WsFederationApplicationSettingsApplication } app
  */
 class WsFederationApplicationSettings extends ApplicationSettings {
   constructor(resourceJson, client) {
     super(resourceJson, client);
-    if (resourceJson && resourceJson.signOn) {
-      this.signOn = new WsFederationSignOn(this.signOn);
+    if (resourceJson && resourceJson.app) {
+      this.app = new WsFederationApplicationSettingsApplication(this.app);
     }
   }
 

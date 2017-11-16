@@ -1,6 +1,9 @@
+const expect = require('chai').expect;
+
 const okta = require('../../');
 const models = require('../../src/models');
-const expect = require('chai').expect;
+const utils = require('../utils');
+
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
@@ -11,15 +14,6 @@ const client = new okta.Client({
   orgUrl: orgUrl,
   token: process.env.OKTA_CLIENT_TOKEN
 });
-
-async function removeAppByLabel(label) {
-  return client.listApplications().each(async (application) => {
-    if (application.label === label) {
-      await application.deactivate();
-      return application.delete();
-    }
-  });
-}
 
 describe('client.createApplication()', () => {
 
@@ -39,7 +33,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.BookmarkApplication);
@@ -76,7 +70,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.BasicAuthApplication);
@@ -115,7 +109,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.BrowserPluginApplication);
@@ -159,7 +153,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.BrowserPluginApplication);
@@ -208,7 +202,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.SecurePasswordStoreApplication);
@@ -259,7 +253,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.AutoLoginApplication);
@@ -267,7 +261,7 @@ describe('client.createApplication()', () => {
       expect(createdApplication.label).to.equal(application.label);
       expect(createdApplication.signOnMode).to.equal(application.signOnMode);
       expect(createdApplication.settings).to.be.instanceof(models.ApplicationSettings);
-      expect(createdApplication.settings.signOn).to.be.instanceof(models.PublicSignOnModeMediated);
+      expect(createdApplication.settings.signOn).to.be.instanceof(models.AutoLoginApplicationSettingsSignOn);
       expect(createdApplication.settings.signOn.redirectUrl).to.equal(application.settings.signOn.redirectUrl);
       expect(createdApplication.settings.signOn.loginUrl).to.equal(application.settings.signOn.loginUrl);
     } finally {
@@ -278,7 +272,7 @@ describe('client.createApplication()', () => {
     }
   });
 
-  it('should allow me to create a custom SAML', async () => {
+  it('should allow me to create a custom SAML application', async () => {
     const application = {
       label: 'Example Custom SAML 2.0 App',
       visibility: {
@@ -325,7 +319,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.SamlApplication);
@@ -334,8 +328,7 @@ describe('client.createApplication()', () => {
       expect(createdApplication.signOnMode).to.equal(application.signOnMode);
       expect(createdApplication.settings).to.be.instanceof(models.ApplicationSettings);
       expect(createdApplication.settings).to.be.instanceof(models.SamlApplicationSettings);
-      expect(createdApplication.settings.app).to.be.instanceof(models.SamlApplicationSettingsApplication);
-      expect(createdApplication.settings.signOn).to.be.instanceof(models.PublicSignOnModeMediated);
+      expect(createdApplication.settings.signOn).to.be.instanceof(models.SamlApplicationSettingsSignOn);
       expect(createdApplication.settings.signOn.assertionSigned).to.equal(application.settings.signOn.assertionSigned);
       expect(createdApplication.settings.signOn.attributeStatements).to.deep.equal(application.settings.signOn.attributeStatements);
       expect(createdApplication.settings.signOn.audience).to.equal(application.settings.signOn.audience);
@@ -388,7 +381,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.WsFederationApplication);
@@ -396,6 +389,8 @@ describe('client.createApplication()', () => {
       expect(createdApplication.label).to.equal(application.label);
       expect(createdApplication.settings).to.be.instanceof(models.ApplicationSettings);
       expect(createdApplication.settings).to.be.instanceof(models.WsFederationApplicationSettings);
+      expect(createdApplication.settings.app).to.be.instanceof(models.ApplicationSettingsApplication);
+      expect(createdApplication.settings.app).to.be.instanceof(models.WsFederationApplicationSettingsApplication);
       expect(createdApplication.settings.app.attributeStatements).to.equal(application.settings.app.attributeStatements);
       expect(createdApplication.settings.app.audienceRestriction).to.equal(application.settings.app.audienceRestriction);
       expect(createdApplication.settings.app.authnContextClassRef).to.equal(application.settings.app.authnContextClassRef);
@@ -453,7 +448,7 @@ describe('client.createApplication()', () => {
     let createdApplication;
 
     try {
-      await removeAppByLabel(application.label);
+      await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
       expect(createdApplication).to.be.instanceof(models.Application);
       expect(createdApplication).to.be.instanceof(models.OpenIdConnectApplication);

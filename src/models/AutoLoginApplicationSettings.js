@@ -13,27 +13,22 @@
 
 /* THIS FILE IS AUTO-GENERATED - SEE CONTRIBUTOR DOCUMENTATION */
 
-var Application = require('./Application');
-const SchemeApplicationCredentials = require('./SchemeApplicationCredentials');
-const AutoLoginApplicationSettings = require('./AutoLoginApplicationSettings');
+var ApplicationSettings = require('./ApplicationSettings');
+const AutoLoginApplicationSettingsSignOn = require('./AutoLoginApplicationSettingsSignOn');
 
 /**
- * @class AutoLoginApplication
- * @extends Application
- * @property { SchemeApplicationCredentials } credentials
- * @property { AutoLoginApplicationSettings } settings
+ * @class AutoLoginApplicationSettings
+ * @extends ApplicationSettings
+ * @property { AutoLoginApplicationSettingsSignOn } signOn
  */
-class AutoLoginApplication extends Application {
+class AutoLoginApplicationSettings extends ApplicationSettings {
   constructor(resourceJson, client) {
     super(resourceJson, client);
-    if (resourceJson && resourceJson.credentials) {
-      this.credentials = new SchemeApplicationCredentials(this.credentials);
-    }
-    if (resourceJson && resourceJson.settings) {
-      this.settings = new AutoLoginApplicationSettings(this.settings);
+    if (resourceJson && resourceJson.signOn) {
+      this.signOn = new AutoLoginApplicationSettingsSignOn(this.signOn);
     }
   }
 
 }
 
-module.exports = AutoLoginApplication;
+module.exports = AutoLoginApplicationSettings;

@@ -13,14 +13,14 @@
 
 /* THIS FILE IS AUTO-GENERATED - SEE CONTRIBUTOR DOCUMENTATION */
 
-var PublicSignOnModeMediated = require('./PublicSignOnModeMediated');
+var Resource = require('../resource');
 
 
 /**
- * @class WsFederationSignOn
- * @extends PublicSignOnModeMediated
+ * @class SamlApplicationSettingsSignOn
+ * @extends Resource
  * @property { boolean } assertionSigned
- * @property { object } attributeStatements
+ * @property { array } attributeStatements
  * @property { string } audience
  * @property { string } audienceOverride
  * @property { string } authnContextClassRef
@@ -28,18 +28,20 @@ var PublicSignOnModeMediated = require('./PublicSignOnModeMediated');
  * @property { string } destination
  * @property { string } destinationOverride
  * @property { string } digestAlgorithm
- * @property { object } honorForceAuthn
+ * @property { boolean } honorForceAuthn
  * @property { string } idpIssuer
  * @property { string } recipient
  * @property { string } recipientOverride
+ * @property { boolean } requestCompressed
  * @property { boolean } responseSigned
  * @property { string } signatureAlgorithm
+ * @property { string } spIssuer
  * @property { string } ssoAcsUrl
  * @property { string } ssoAcsUrlOverride
  * @property { string } subjectNameIdFormat
  * @property { string } subjectNameIdTemplate
  */
-class WsFederationSignOn extends PublicSignOnModeMediated {
+class SamlApplicationSettingsSignOn extends Resource {
   constructor(resourceJson, client) {
     super(resourceJson, client);
 
@@ -47,4 +49,4 @@ class WsFederationSignOn extends PublicSignOnModeMediated {
 
 }
 
-module.exports = WsFederationSignOn;
+module.exports = SamlApplicationSettingsSignOn;

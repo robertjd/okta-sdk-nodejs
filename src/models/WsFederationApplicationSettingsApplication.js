@@ -17,16 +17,22 @@ var ApplicationSettingsApplication = require('./ApplicationSettingsApplication')
 
 
 /**
- * @class SamlApplicationSettingsApplication
+ * @class WsFederationApplicationSettingsApplication
  * @extends ApplicationSettingsApplication
- * @property { string } buttonSelector
- * @property { string } extraFieldSelector
- * @property { string } extraFieldValue
- * @property { string } passwordSelector
- * @property { string } url
- * @property { string } userNameSelector
+ * @property { string } attributeStatements
+ * @property { string } audienceRestriction
+ * @property { string } authnContextClassRef
+ * @property { string } groupFilter
+ * @property { string } groupName
+ * @property { string } groupValueFormat
+ * @property { string } nameIDFormat
+ * @property { string } realm
+ * @property { string } siteURL
+ * @property { string } usernameAttribute
+ * @property { string } wReplyOverride
+ * @property { string } wReplyURL
  */
-class SamlApplicationSettingsApplication extends ApplicationSettingsApplication {
+class WsFederationApplicationSettingsApplication extends ApplicationSettingsApplication {
   constructor(resourceJson, client) {
     super(resourceJson, client);
 
@@ -34,4 +40,4 @@ class SamlApplicationSettingsApplication extends ApplicationSettingsApplication 
 
 }
 
-module.exports = SamlApplicationSettingsApplication;
+module.exports = WsFederationApplicationSettingsApplication;

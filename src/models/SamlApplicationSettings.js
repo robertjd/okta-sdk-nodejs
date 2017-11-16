@@ -14,18 +14,18 @@
 /* THIS FILE IS AUTO-GENERATED - SEE CONTRIBUTOR DOCUMENTATION */
 
 var ApplicationSettings = require('./ApplicationSettings');
-const SamlApplicationSettingsApplication = require('./SamlApplicationSettingsApplication');
+const SamlApplicationSettingsSignOn = require('./SamlApplicationSettingsSignOn');
 
 /**
  * @class SamlApplicationSettings
  * @extends ApplicationSettings
- * @property { SamlApplicationSettingsApplication } app
+ * @property { SamlApplicationSettingsSignOn } signOn
  */
 class SamlApplicationSettings extends ApplicationSettings {
   constructor(resourceJson, client) {
     super(resourceJson, client);
-    if (resourceJson && resourceJson.app) {
-      this.app = new SamlApplicationSettingsApplication(this.app);
+    if (resourceJson && resourceJson.signOn) {
+      this.signOn = new SamlApplicationSettingsSignOn(this.signOn);
     }
   }
 
