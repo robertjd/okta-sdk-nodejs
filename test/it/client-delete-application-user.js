@@ -14,7 +14,7 @@ const client = new okta.Client({
   token: process.env.OKTA_CLIENT_TOKEN
 });
 
-describe.only('client.deleteApplicationUser()', () => {
+describe('client.deleteApplicationUser()', () => {
 
   it('should allow me to remove a user from a application', async () => {
     const application = {
