@@ -26,7 +26,7 @@ const ApplicationVisibility = require('./ApplicationVisibility');
  * @property { hash } _embedded
  * @property { hash } _links
  * @property { ApplicationAccessibility } accessibility
- * @property { string } created
+ * @property { dateTime } created
  * @property { ApplicationCredentials } credentials
  * @property { array } features
  * @property { string } id
