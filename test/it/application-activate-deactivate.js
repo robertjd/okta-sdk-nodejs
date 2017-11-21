@@ -6,7 +6,7 @@ const utils = require('../utils');
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
-  orgUrl = `${orgUrl}/client-update-application`;
+  orgUrl = `${orgUrl}/application-activate-deactivate`;
 }
 
 const client = new okta.Client({
@@ -14,9 +14,9 @@ const client = new okta.Client({
   token: process.env.OKTA_CLIENT_TOKEN
 });
 
-describe('client.updateApplication()', () => {
+describe('Application.activate() / Application.deactivate()', () => {
 
-  it('should allow me to get an application by ID', async () => {
+  it('should allow me to activate/deactivate the application', async () => {
     const application = {
       name: 'bookmark',
       label: 'my bookmark app',
@@ -34,11 +34,20 @@ describe('client.updateApplication()', () => {
     try {
       await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
-      createdApplication.label = 'updated';
-      await createdApplication.update();
-      expect(createdApplication.label).to.equal('updated');
-      const fetchedApplication = await client.getApplication(createdApplication.id);
-      expect(fetchedApplication.label).to.equal('updated');
+      await createdApplication.deactivate().then(response => {
+        expect(response.status).to.equal(200);
+      });
+      await client.getApplication(createdApplication.id)
+      .then(application => {
+        expect(application.status).to.equal('INACTIVE');
+      });
+      await createdApplication.activate().then(response => {
+        expect(response.status).to.equal(200);
+      });
+      await client.getApplication(createdApplication.id)
+      .then(application => {
+        expect(application.status).to.equal('ACTIVE');
+      });
     } finally {
       if (createdApplication) {
         await createdApplication.deactivate();
@@ -46,5 +55,4 @@ describe('client.updateApplication()', () => {
       }
     }
   });
-
 });

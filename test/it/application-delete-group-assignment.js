@@ -6,7 +6,7 @@ const utils = require('../utils');
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
-  orgUrl = `${orgUrl}/client-update-application`;
+  orgUrl = `${orgUrl}/application-delete-group-assignment`;
 }
 
 const client = new okta.Client({
@@ -14,9 +14,9 @@ const client = new okta.Client({
   token: process.env.OKTA_CLIENT_TOKEN
 });
 
-describe('client.updateApplication()', () => {
+describe('Application.deleteApplicationGroupAssignment()', () => {
 
-  it('should allow me to get an application by ID', async () => {
+  it('should allow me to delete a group application assignment', async () => {
     const application = {
       name: 'bookmark',
       label: 'my bookmark app',
@@ -29,22 +29,33 @@ describe('client.updateApplication()', () => {
       }
     };
 
+    const group = {
+      profile: {
+        name: 'test group'
+      }
+    };
+
     let createdApplication;
+    let createdGroup;
 
     try {
       await utils.removeAppByLabel(client, application.label);
+      await utils.cleanup(client, null, group);
       createdApplication = await client.createApplication(application);
-      createdApplication.label = 'updated';
-      await createdApplication.update();
-      expect(createdApplication.label).to.equal('updated');
-      const fetchedApplication = await client.getApplication(createdApplication.id);
-      expect(fetchedApplication.label).to.equal('updated');
+      createdGroup = await client.createGroup(group);
+      await createdApplication.updateApplicationGroupAssignment(createdGroup.id);
+      await createdApplication.deleteApplicationGroupAssignment(createdGroup.id)
+      .then(response => {
+        expect(response.status).to.equal(204);
+      });
     } finally {
       if (createdApplication) {
         await createdApplication.deactivate();
         await createdApplication.delete();
       }
+      if (createdGroup) {
+        await utils.cleanup(client, null, createdGroup);
+      }
     }
   });
-
 });

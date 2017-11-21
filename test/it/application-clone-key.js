@@ -7,7 +7,7 @@ const utils = require('../utils');
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
-  orgUrl = `${orgUrl}/client-clone-application-key`;
+  orgUrl = `${orgUrl}/application-clone-key`;
 }
 
 const client = new okta.Client({
@@ -15,7 +15,7 @@ const client = new okta.Client({
   token: process.env.OKTA_CLIENT_TOKEN
 });
 
-describe('client.cloneApplicationKey()', () => {
+describe('Application.cloneApplicationKey()', () => {
 
   it('should allow me to clone a key from one app to another app', async () => {
     const application = {
@@ -50,11 +50,11 @@ describe('client.cloneApplicationKey()', () => {
       await utils.removeAppByLabel(client, application2.label);
       createdApplication = await client.createApplication(application);
       createdApplication2 = await client.createApplication(application2);
-      const generatedKey = await client.generateApplicationKey(createdApplication.id, {
+      const generatedKey = await createdApplication.generateApplicationKey({
         validityYears: 2
       });
 
-      const clonedKey = await client.cloneApplicationKey(createdApplication.id, generatedKey.kid, {
+      const clonedKey = await createdApplication.cloneApplicationKey(generatedKey.kid, {
         targetAid: createdApplication2.id
       });
       expect(clonedKey).to.be.instanceof(models.JsonWebKey);

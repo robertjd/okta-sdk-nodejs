@@ -7,7 +7,7 @@ const utils = require('../utils');
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
-  orgUrl = `${orgUrl}/applications-list-keys`;
+  orgUrl = `${orgUrl}/client-list-application-keys`;
 }
 
 const client = new okta.Client({

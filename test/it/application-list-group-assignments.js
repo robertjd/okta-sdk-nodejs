@@ -6,7 +6,7 @@ const utils = require('../utils');
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
-  orgUrl = `${orgUrl}/client-update-application`;
+  orgUrl = `${orgUrl}/application-list-group-assignments`;
 }
 
 const client = new okta.Client({
@@ -14,9 +14,9 @@ const client = new okta.Client({
   token: process.env.OKTA_CLIENT_TOKEN
 });
 
-describe('client.updateApplication()', () => {
+describe('Application.listGroupAssignments()', () => {
 
-  it('should allow me to get an application by ID', async () => {
+  it('should allow me to list an applications group assignments', async () => {
     const application = {
       name: 'bookmark',
       label: 'my bookmark app',
@@ -29,22 +29,33 @@ describe('client.updateApplication()', () => {
       }
     };
 
+    const group = {
+      profile: {
+        name: 'test group'
+      }
+    };
+
     let createdApplication;
+    let createdGroup;
 
     try {
       await utils.removeAppByLabel(client, application.label);
+      await utils.cleanup(client, null, group);
       createdApplication = await client.createApplication(application);
-      createdApplication.label = 'updated';
-      await createdApplication.update();
-      expect(createdApplication.label).to.equal('updated');
-      const fetchedApplication = await client.getApplication(createdApplication.id);
-      expect(fetchedApplication.label).to.equal('updated');
+      createdGroup = await client.createGroup(group);
+      const assignment = await createdApplication.updateApplicationGroupAssignment(createdGroup.id);
+      await createdApplication.listGroupAssignments().each(async (fetchedAssignment) => {
+        // there should be only one assignment
+        expect(fetchedAssignment.id).to.equal(assignment.id);
+      });
     } finally {
       if (createdApplication) {
         await createdApplication.deactivate();
         await createdApplication.delete();
       }
+      if (createdGroup) {
+        await utils.cleanup(client, null, createdGroup);
+      }
     }
   });
-
 });

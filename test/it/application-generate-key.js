@@ -1,12 +1,13 @@
 const expect = require('chai').expect;
 
 const okta = require('../../');
+const models = require('../../src/models');
 const utils = require('../utils');
 
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
-  orgUrl = `${orgUrl}/client-update-application`;
+  orgUrl = `${orgUrl}/application-generate-key`;
 }
 
 const client = new okta.Client({
@@ -14,9 +15,9 @@ const client = new okta.Client({
   token: process.env.OKTA_CLIENT_TOKEN
 });
 
-describe('client.updateApplication()', () => {
+describe('Application.generateApplicationKey()', () => {
 
-  it('should allow me to get an application by ID', async () => {
+  it('should allow me to generate keys for an application', async () => {
     const application = {
       name: 'bookmark',
       label: 'my bookmark app',
@@ -34,11 +35,10 @@ describe('client.updateApplication()', () => {
     try {
       await utils.removeAppByLabel(client, application.label);
       createdApplication = await client.createApplication(application);
-      createdApplication.label = 'updated';
-      await createdApplication.update();
-      expect(createdApplication.label).to.equal('updated');
-      const fetchedApplication = await client.getApplication(createdApplication.id);
-      expect(fetchedApplication.label).to.equal('updated');
+      const applicationKey = await createdApplication.generateApplicationKey({
+        validityYears: 2
+      });
+      expect(applicationKey).to.be.instanceof(models.JsonWebKey);
     } finally {
       if (createdApplication) {
         await createdApplication.deactivate();
@@ -46,5 +46,4 @@ describe('client.updateApplication()', () => {
       }
     }
   });
-
 });

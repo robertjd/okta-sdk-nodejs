@@ -6,7 +6,7 @@ const utils = require('../utils');
 let orgUrl = process.env.OKTA_CLIENT_ORGURL;
 
 if (process.env.OKTA_USE_MOCK) {
-  orgUrl = `${orgUrl}/applications-deactivate`;
+  orgUrl = `${orgUrl}/client-deactivate-application`;
 }
 
 const client = new okta.Client({
