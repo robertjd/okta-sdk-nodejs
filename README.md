@@ -251,7 +251,7 @@ client.listUsers().each(user => {
   console.log(user);
   logUserToRemoteSystem(user);
 }).then(() => {
-  console.log('All users have been vistied');
+  console.log('All users have been visited');
 });
 ```
 
