@@ -57,7 +57,7 @@ describe('client.cloneApplicationKey()', () => {
       const clonedKey = await client.cloneApplicationKey(createdApplication.id, generatedKey.kid, {
         targetAid: createdApplication2.id
       });
-      expect(clonedKey).to.be.instanceof(models.JsonWebKeyRSAMediated);
+      expect(clonedKey).to.be.instanceof(models.JsonWebKey);
       expect(clonedKey.kid).to.equal(generatedKey.kid);
     } finally {
       if (createdApplication) {

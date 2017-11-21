@@ -25,7 +25,6 @@ const ModelFactory = require('./model-factory');
  * Auto-Generated API client, implementes the operations as defined in the OpenaAPI JSON spec
  *
  * @class GeneratedApiClient
- * @extends {Client}
  */
 class GeneratedApiClient {
 
@@ -126,7 +125,7 @@ class GeneratedApiClient {
   listApplicationKeys(appId) {
     let url = `${this.baseUrl}/api/v1/apps/${appId}/credentials/keys`;
 
-    return new Collection(this, url, new ModelFactory(models.JsonWebKeyRSAMediated));
+    return new Collection(this, url, new ModelFactory(models.JsonWebKey));
   }
 
   /**
@@ -144,7 +143,7 @@ class GeneratedApiClient {
     url += queryString ? ('?' + queryString) : '';
 
     const request = this.http.postJson(url);
-    return request.then(jsonRes => new models.JsonWebKeyRSAMediated(jsonRes, this));
+    return request.then(jsonRes => new models.JsonWebKey(jsonRes, this));
   }
 
   /**
@@ -158,7 +157,7 @@ class GeneratedApiClient {
     let url = `${this.baseUrl}/api/v1/apps/${appId}/credentials/keys/${keyId}`;
 
     const request = this.http.getJson(url);
-    return request.then(jsonRes => new models.JsonWebKeyRSAMediated(jsonRes, this));
+    return request.then(jsonRes => new models.JsonWebKey(jsonRes, this));
   }
 
   /**
@@ -177,7 +176,7 @@ class GeneratedApiClient {
     url += queryString ? ('?' + queryString) : '';
 
     const request = this.http.postJson(url);
-    return request.then(jsonRes => new models.JsonWebKeyRSAMediated(jsonRes, this));
+    return request.then(jsonRes => new models.JsonWebKey(jsonRes, this));
   }
 
   /**
@@ -207,7 +206,7 @@ class GeneratedApiClient {
    * @description
    * Removes a group assignment from an application.
    */
-  deleteGroupApplicationAssignment(appId, groupId) {
+  deleteApplicationGroupAssignment(appId, groupId) {
     let url = `${this.baseUrl}/api/v1/apps/${appId}/groups/${groupId}`;
 
     const request = this.http.delete(url);
@@ -223,7 +222,7 @@ class GeneratedApiClient {
    * @description
    * Fetches an application group assignment
    */
-  getGroupApplicationAssignment(appId, groupId, queryParameters) {
+  getApplicationGroupAssignment(appId, groupId, queryParameters) {
     let url = `${this.baseUrl}/api/v1/apps/${appId}/groups/${groupId}`;
     const queryString = qs.stringify(queryParameters || {});
 
@@ -241,7 +240,7 @@ class GeneratedApiClient {
    * @description
    * Assigns a group to an application
    */
-  updateGroupApplicationAssignment(appId, groupId, applicationGroupAssignment) {
+  updateApplicationGroupAssignment(appId, groupId, applicationGroupAssignment) {
     let url = `${this.baseUrl}/api/v1/apps/${appId}/groups/${groupId}`;
 
     const request = this.http.putJson(url, {

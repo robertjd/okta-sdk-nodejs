@@ -17,7 +17,7 @@ var Resource = require('../resource');
 
 
 /**
- * @class JsonWebKeyRSAMediated
+ * @class JsonWebKey
  * @extends Resource
  * @property { string } alg
  * @property { string } created
@@ -35,7 +35,7 @@ var Resource = require('../resource');
  * @property { string } x5t#S256
  * @property { string } x5u
  */
-class JsonWebKeyRSAMediated extends Resource {
+class JsonWebKey extends Resource {
   constructor(resourceJson, client) {
     super(resourceJson, client);
 
@@ -43,4 +43,4 @@ class JsonWebKeyRSAMediated extends Resource {
 
 }
 
-module.exports = JsonWebKeyRSAMediated;
+module.exports = JsonWebKey;

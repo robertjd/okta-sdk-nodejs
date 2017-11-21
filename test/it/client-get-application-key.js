@@ -38,7 +38,7 @@ describe('client.getApplicationKey()', () => {
       const applicationKeys = await client.listApplicationKeys(createdApplication.id);
       await applicationKeys.each(async (key) => {
         const fetchedKey = await client.getApplicationKey(createdApplication.id, key.kid);
-        expect(fetchedKey).to.be.instanceof(models.JsonWebKeyRSAMediated);
+        expect(fetchedKey).to.be.instanceof(models.JsonWebKey);
       });
     } finally {
       if (createdApplication) {

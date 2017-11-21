@@ -14,7 +14,7 @@ const client = new okta.Client({
   token: process.env.OKTA_CLIENT_TOKEN
 });
 
-describe('client.deleteGroupApplicationAssignment()', () => {
+describe('client.deleteApplicationGroupAssignment()', () => {
 
   it('should allow me to delete a group-application assignment', async () => {
     const application = {
@@ -43,8 +43,8 @@ describe('client.deleteGroupApplicationAssignment()', () => {
       await utils.cleanup(client, null, group);
       createdApplication = await client.createApplication(application);
       createdGroup = await client.createGroup(group);
-      await client.updateGroupApplicationAssignment(createdApplication.id, createdGroup.id);
-      await client.deleteGroupApplicationAssignment(createdApplication.id, createdGroup.id)
+      await client.updateApplicationGroupAssignment(createdApplication.id, createdGroup.id);
+      await client.deleteApplicationGroupAssignment(createdApplication.id, createdGroup.id)
       .then((res) => {
         expect(res.status).to.equal(204);
       });

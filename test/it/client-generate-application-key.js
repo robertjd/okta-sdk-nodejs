@@ -38,7 +38,7 @@ describe('client.generateApplicationKey()', () => {
       const applicationKey = await client.generateApplicationKey(createdApplication.id, {
         validityYears: 2
       });
-      expect(applicationKey).to.be.instanceof(models.JsonWebKeyRSAMediated);
+      expect(applicationKey).to.be.instanceof(models.JsonWebKey);
     } finally {
       if (createdApplication) {
         await createdApplication.deactivate();
