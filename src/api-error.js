@@ -20,13 +20,13 @@ var util = require('util');
  * @param {Number|String} status The HTTP status code of the response
  * @param {Object} responseBody The JSON body that is the Okta error message that was returned by the API
  */
-function OktaApiError(url, status, responseBody) {
+function OktaApiError(url, status, responseBody, responseHeaders) {
   Error.captureStackTrace(this, this.constructor);
 
   this.name = this.constructor.name;
   this.status = status;
   this.errorCode = responseBody.errorCode;
-
+  this.headers = responseHeaders;
   this.errorSummary = responseBody.errorSummary || '';
   this.errorCauses = responseBody.errorCauses;
   this.errorLink = responseBody.errorLink;
