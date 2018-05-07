@@ -10,9 +10,6 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-
-const isoFetch = require('isomorphic-fetch');
-
 const OktaApiError = require('./api-error');
 const HttpError = require('./http-error');
 const MemoryStore = require('./memory-store');
@@ -26,7 +23,7 @@ const defaultCacheMiddleware = require('./default-cache-middleware');
 class Http {
   constructor(httpConfig) {
     this.defaultHeaders = {};
-    this.fetch = httpConfig.fetch || isoFetch;
+    this.fetch = httpConfig.fetch;
     this.cacheStore = httpConfig.cacheStore || new MemoryStore();
     if (httpConfig.cacheMiddleware !== null) {
       this.cacheMiddleware = httpConfig.cacheMiddleware || defaultCacheMiddleware;

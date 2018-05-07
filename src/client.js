@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-
+const isoFetch = require('isomorphic-fetch');
 const os = require('os');
 const packageJson = require('../package.json');
 
@@ -37,6 +37,8 @@ class Client extends GeneratedApiClient {
 
     const parsedConfig = configLoader.config;
 
+    const requestExecutor = clientConfig.requestExecutor;
+
     if (!parsedConfig.client.orgUrl) {
       throw new Error(`Okta Org URL not provided, see ${repoUrl} for usage.`);
     }
@@ -50,7 +52,7 @@ class Client extends GeneratedApiClient {
     this.http = new Http({
       cacheStore: clientConfig.cacheStore,
       cacheMiddleware: clientConfig.cacheMiddleware,
-      fetch: clientConfig.fetch
+      fetch: requestExecutor ? requestExecutor.fetch.bind(requestExecutor) : isoFetch
     });
     this.http.defaultHeaders.Authorization = `SSWS ${this.apiToken}`;
     this.http.defaultHeaders['User-Agent'] = parsedConfig.client.userAgent ? parsedConfig.client.userAgent + ' ' + DEFAULT_USER_AGENT : DEFAULT_USER_AGENT;
