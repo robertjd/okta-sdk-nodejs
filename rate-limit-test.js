@@ -1,10 +1,12 @@
 const okta = require('./src');
-const FetchWithDefaultRetry = require('./src/executor-with-default-retry');
+const DefaultRequestExecutor = require('./src/default-request-executor');
 
-const executor = new FetchWithDefaultRetry()
+const requestExecutor = new DefaultRequestExecutor({
+  // optional configuration
+})
 
 const client = new okta.Client({
-  requestExecutor: executor
+  requestExecutor: requestExecutor
 });
 
 executor.on('backoff', (request, requestId, delayMs) => {

@@ -37,7 +37,9 @@ class Client extends GeneratedApiClient {
 
     const parsedConfig = configLoader.config;
 
-    const requestExecutor = clientConfig.requestExecutor;
+    const requestExecutor = clientConfig.requestExecutor || (
+      clientConfig.useDefaultRetryStrategy ?  new DefaultRequestExecutor() : new requestExecutor()
+    );
 
     if (!parsedConfig.client.orgUrl) {
       throw new Error(`Okta Org URL not provided, see ${repoUrl} for usage.`);

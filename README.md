@@ -14,14 +14,17 @@ npm install @okta/okta-sdk-nodejs
 
 ## Usage
 
-All usage of this SDK begins with the creation of a client, the client handles the authentication and communication with the Okta API.  To create a client, you need to provide it the URL of your Okta Org, and an API Token that you have provisioned for yourself (this can be done by visiting API -> Tokens in your Okta Developer Dashboard):
+All usage of this SDK begins with the creation of a client, the client handles the authentication and communication with the Okta API.  To create a client, you need to provide it with your Okta Domain and an API token.  To obtain those, see [Getting Started With the Okta APIs](https://developer.okta.com/docs/api/getting_started/api_test_client).
+
+We also opt-in in the default request executor, which will automatically handle rate limiting retries for you:
 
 ```javascript
 const okta = require('@okta/okta-sdk-nodejs');
 
 const client = new okta.Client({
-  orgUrl: 'https://dev-1234.oktapreview.com/'
-  token: 'xYzabc'    // Obtained from Developer Dashboard
+  orgUrl: 'https://{yourOktaDomain}/'
+  token: 'xYzabc',    // Obtained from Developer Dashboard
+  requestExecutor: new okta.DefaultRequestExecutor() // Will be added by default in 2.0
 });
 ```
 
@@ -614,6 +617,75 @@ We suggest evaluating libraries like [node-backoff] and [node-retry] to help wit
 ### Method-level Handling
 
 If you are using the SDK for only a few methods, you may want to simply handle the error in the callback handler and do a simple retry.  All methods that resolve with an error will have the necessary HTTP header information to make a decision about how to retry.  Please see the [Advanced Subscription](#advanced-subscription) example above for header parsing details.
+
+## Request Executor
+
+This SDK uses the concept of a request executor, a class that is responsible for making HTTP requests to the API and fulfilling the responses for the client. Please see the [RequestExecutor]() class.  The class is a simple proxy for the [Fetch API] and the client will always call it with the form `(uri, request)`
+
+The SDK ships with the base RequestExecutor and DefaultRequestExecutor, or you can design your own request executor by extending one of ours.
+
+### DefaultRequestExecutor
+
+- The [DefaultRequestExecutor][], which will automatically retry requests if a 429 error is returned, until `maxElapsedTime` is reached and an error is returned.  This executor will add a radom offset of time to each retry, bound by `rateLimitRandomOffsetMin` and `rateLimitRandomOffsetMax`.  These properties are passed to the constructor as millisecond values (defaults shown):
+
+```javascript
+const client = new okta.Client({
+  orgUrl: 'https://{yourOktaDomain}/'
+  token: 'xYzabc',    // Obtained from Developer Dashboard
+  requestExecutor: new okta.DefaultRequestExecutor({
+    maxElapsedTime: 10000,
+    rateLimitRandomOffsetMin: 5000,
+    rateLimitRandomOffsetMax: 1000
+  })
+});
+```
+
+### RequestExecutor
+
+This is the base executor which does nothing more than delegate the call to our internal fetch interface.  This class has no configuration.  Use this class if you wish to opt-out of the retry behavior that is implemented by DefaultRequestExecutor.
+
+```javascript
+const client = new okta.Client({
+  orgUrl: 'https://{yourOktaDomain}/'
+  token: 'xYzabc',    // Obtained from Developer Dashboard
+  requestExecutor: new okta.RequestExecutor()
+});
+```
+
+BLAH KEEP EVENT EMITTERS AS A FEATURE OF THE DEFAULT CLASS
+
+### Custom Request Executor
+
+There are two ways you can design your own executor:
+
+- Implement a class that matches the base [RequestExecutor][] by implemeting the `fetch` method.
+- Extend one of our executors.
+
+As an example, let's say you want to use our default 429 retry behavior, but you want to add some logging to understand how long requests are taking. To do this, you can extend DefaultRequestExecutor, then re-implement fetch with your custom logic, will still delegating the actual call to DefaultRequestExecutor:
+
+```javascript
+class LoggingExecutorWithRetry extends okta.DefaultRequestExecutor {
+  constructor (configuration) {
+    super(configuration)
+  }
+  fetch(request) {
+    const start = new Date()
+    console.log(`Begin request for ${request.url}`)
+    return super.fetch(request).then(response => {
+      const timeMs = new Date() - start
+      console.log(`Request complete for ${request.url}`)
+      console.log(`${timeMs}ms`)
+      return response; // Or a promise that will return the response
+    })
+  }
+};
+
+const client = new okta.Client({
+  requestExecutor: new LoggingExecutorWithRetry({
+    rateLimitRandomOffsetMax: 500
+  })
+})
+```
 
 ## Contributing
 
