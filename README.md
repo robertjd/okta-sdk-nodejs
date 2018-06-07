@@ -626,7 +626,7 @@ The SDK ships with the base RequestExecutor and DefaultRequestExecutor, or you c
 
 ### DefaultRequestExecutor
 
-- The [DefaultRequestExecutor][], which will automatically retry requests if a 429 error is returned, until `maxElapsedTime` is reached and an error is returned.  This executor will add a radom offset of time to each retry, bound by `rateLimitRandomOffsetMin` and `rateLimitRandomOffsetMax`.  These properties are passed to the constructor as millisecond values (defaults shown):
+- The [DefaultRequestExecutor]() will automatically retry requests if a 429 error is returned, until `maxElapsedTime`.  If the max time is reached the promise is rejected.  This executor will add a random time offset to each retry, bound by `rateLimitRandomOffsetMin` and `rateLimitRandomOffsetMax`.  All properties are passed to the constructor as millisecond values (defaults shown):
 
 ```javascript
 const client = new okta.Client({
@@ -652,16 +652,14 @@ const client = new okta.Client({
 });
 ```
 
-BLAH KEEP EVENT EMITTERS AS A FEATURE OF THE DEFAULT CLASS
-
 ### Custom Request Executor
 
 There are two ways you can design your own executor:
 
-- Implement a class that matches the base [RequestExecutor][] by implemeting the `fetch` method.
 - Extend one of our executors.
+- Implement a class that matches the base [RequestExecutor][] by implemeting the `fetch` method.
 
-As an example, let's say you want to use our default 429 retry behavior, but you want to add some logging to understand how long requests are taking. To do this, you can extend DefaultRequestExecutor, then re-implement fetch with your custom logic, will still delegating the actual call to DefaultRequestExecutor:
+As an example, let's say you want to use our default 429 retry behavior, but you want to add some logging to understand how long requests are taking. To do this, you can extend [DefaultRequestExecutor][], then re-implement the `fetch()` method with your custom logic, while still delegating the actual call to DefaultRequestExecutor:
 
 ```javascript
 class LoggingExecutorWithRetry extends okta.DefaultRequestExecutor {

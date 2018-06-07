@@ -23,7 +23,7 @@ const defaultCacheMiddleware = require('./default-cache-middleware');
 class Http {
   constructor(httpConfig) {
     this.defaultHeaders = {};
-    this.fetch = httpConfig.fetch;
+    this.requestExecutor = httpConfig.requestExecutor;
     this.cacheStore = httpConfig.cacheStore || new MemoryStore();
     if (httpConfig.cacheMiddleware !== null) {
       this.cacheMiddleware = httpConfig.cacheMiddleware || defaultCacheMiddleware;
@@ -56,7 +56,7 @@ class Http {
     request.headers = Object.assign(this.defaultHeaders, request.headers);
     request.method = request.method || 'get';
     if (!this.cacheMiddleware) {
-      return this.fetch(uri, request)
+      return this.requestExecutor.fetch(uri, request)
       .then(this.errorFilter);
     }
     const ctx = {
@@ -68,7 +68,7 @@ class Http {
     };
     return this.cacheMiddleware(ctx, () => {
       return Promise.resolve(ctx.res ||
-        this.fetch(uri, request)
+        this.requestExecutor.fetch(uri, request)
         .then(this.errorFilter)
         .then(res => ctx.res = res)
       );

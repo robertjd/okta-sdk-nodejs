@@ -3,45 +3,34 @@ const RequestExecutor = require('./request-executor');
 class DefaultOktaRequestExecutor extends RequestExecutor {
   constructor(config = {}) {
     super();
-    this.rateLimitRandomOffsetMin = config.min || 500;
-    this.rateLimitRandomOffsetMax = config.max || 1000;
-    this.useDefaultRateLimitRetryStrategy = !!config.useDefaultRateLimitRetryStrategy;
+    this.maxElapsedTime = config.maxElapsedTime || 10000;
+    this.rateLimitRandomOffsetMin = config.rateLimitRandomOffsetMin || 5000;
+    this.rateLimitRandomOffsetMax = config.rateLimitRandomOffsetMax || 1000;
   }
-  fetch() {
-    const args = Array.prototype.slice.apply(arguments);
-    if (this.useDefaultRateLimitRetryStrategy) {
-      return super.fetch.apply(this, args).then(this.defaultRateLimitRetryStrategy.bind(this, args));
-    } else {
-      return super.fetch.apply(this, args);
+  fetch(uri, request) {
+    return super.fetch(uri, request).then(this.defaultRateLimitRetryStrategy.bind(this, uri, request));
+  }
+  applyRetryHeaders(request, response) {
+    const requestId = response.headers.get('x-okta-request-id');
+    if (!request.headers) {
+      request.headers = {};
     }
-  }
-  validateFetchArgs(args) {
-    const erro
-    if (args.length > 3) {
-
+    if (!request.headers['X-Okta-Retry-For']) {
+      request.headers['X-Okta-Retry-For'] = requestId;
     }
+    request.headers['X-Okta-Retry-Count'] = request.headers['X-Okta-Retry-Count'] ? request.headers['X-Okta-Retry-Count']++ : 1;
+    return request;
   }
-  addRetryHeaders(fetchArgs) {
-    let request;
-    if (typeof fetchArgs[0] === 'string' && typeof fetchArgs[1] === 'object') {
-      request = fetchArgs[0]
-    } else if (typeof fetchArgs[0] === 'object') {
-      request = fetchArgs[1]
-    }
-  }
-  defaultRateLimitRetryStrategy(originalArgs, response) {
+  defaultRateLimitRetryStrategy(uri, request, response) {
     if (response.status === 429) {
-      const requestId = response.headers.get('x-okta-request-id');
       const retryEpochMs = parseInt(response.headers.get('x-rate-limit-reset'), 10) * 1000;
       const retryDate = new Date(retryEpochMs);
       const nowDate = new Date(response.headers.get('date'));
       const offset = Math.floor(Math.random() * this.rateLimitRandomOffsetMax) + this.rateLimitRandomOffsetMin;
       const delayMs = retryDate.getTime() - nowDate.getTime() + offset;
       return new Promise(resolve => {
-        this.emit('backoff', response, requestId, delayMs);
         setTimeout(() => {
-          this.emit('resume', response, requestId);
-          resolve(this.fetch(uri, init));
+          resolve(this.fetch(uri, this.applyRetryHeaders(request, response)));
         }, delayMs);
       });
     }
