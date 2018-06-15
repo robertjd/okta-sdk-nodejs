@@ -6,6 +6,7 @@ class RequestExecutor extends EventEmitter {
     super();
   }
   fetch(uri, init) {
+    this.emit('request', uri, init);
     return isoFetch(uri, init);
   }
 }

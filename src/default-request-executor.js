@@ -39,7 +39,7 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
     return Math.round(Math.random() * this.rateLimitRandomOffsetMax);
   }
   getRetryDelayMs(response) {
-    const nowDate = new Date(parseInt(this.getResponseDate(response), 10) * 1000);
+    const nowDate = new Date(this.getResponseDate(response));
     const retryDate = new Date(parseInt(this.getRateLimitReset(response), 10) * 1000);
     const offset = this.getRandomOffset();
     return retryDate.getTime() - nowDate.getTime() + offset;
@@ -57,7 +57,10 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
     const delayMs = this.getRetryDelayMs(response);
     const newRequest = this.buildRetriedRequest(request, response);
     return new Promise(resolve => {
+      const requestId = this.getOktaRequestId(response);
+      this.emit('backoff', request, requestId, delayMs);
       setTimeout(() => {
+        this.emit('resume', newRequest, requestId);
         resolve(this.fetch(uri, newRequest));
       }, delayMs);
     });

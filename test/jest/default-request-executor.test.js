@@ -63,7 +63,7 @@ describe('DefaultRequestExecutor', () => {
       const mockResponse = buildMockResponse({
         headers: {
           'x-rate-limit-reset' : String(requestExecutor.dateToEpochSeconds(retryAfter)),
-          date: String(requestExecutor.dateToEpochSeconds(now))
+          date: now.toGMTString()
         }
       });
       let retries = 0;

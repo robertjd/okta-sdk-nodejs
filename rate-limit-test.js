@@ -9,14 +9,13 @@ const client = new okta.Client({
   requestExecutor: requestExecutor
 });
 
-executor.on('backoff', (request, requestId, delayMs) => {
-  console.log('backoff', request.url, requestId, delayMs)
+requestExecutor.on('backoff', (request, requestId, delayMs) => {
+  console.log('backoff', request, requestId, delayMs)
 })
 
-executor.on('resume', (request, requestId) => {
-  console.log('resume', request.url, requestId)
+requestExecutor.on('resume', (request, requestId) => {
+  console.log('resume', request, requestId)
 })
-
 
 
 function go(next){
