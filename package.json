@@ -13,12 +13,13 @@
   "scripts": {
     "banners": "./utils/maintain-banners.js",
     "build": "okta-sdk-generator -t templates/ -o . && ./utils/maintain-banners.js",
-    "jest": "jest",
+    "eslint": "eslint -c src/.eslintrc src/ && eslint -c test/.eslintrc test/it test/unit && eslint -c test/jest/.eslintrc test/jest/ && eslint -c src/.eslintrc utils/",
+    "jest": "jest --coverage test/jest/*.js",
     "predocs": "rm -rf ./jsdocs && mkdir jsdocs/ && ./utils/make-jsdoc-readme.js > ./jsdocs/jsdoc-temp.md",
     "docs": "./node_modules/.bin/jsdoc src/ -c ./docs/config.json -d ./jsdocs/ -P ./package.json -R ./jsdocs/jsdoc-temp.md -r",
     "test:unit": "mocha test/unit/**/*.js --no-timeouts",
     "test:it": "nyc --reporter=text --reporter=html mocha test/**/*.js --no-timeouts",
-    "test": "eslint -c src/.eslintrc src/ && eslint -c test/.eslintrc test/ && eslint -c src/.eslintrc utils/ && npm run test:it"
+    "test": "npm run eslint && npm run test:it"
   },
   "keywords": [],
   "license": "Apache-2.0",

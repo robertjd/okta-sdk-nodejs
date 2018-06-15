@@ -12,7 +12,7 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
   fetch(uri, request) {
     return super.fetch(uri, request).then(this.parseResponse.bind(this, uri, request));
   }
-  getDelayedRequest(request, response) {
+  buildRetriedRequest(request, response) {
     const newRequest = Object.assign({}, request);
     const requestId = this.getOktaRequestId(response);
     if (!newRequest.headers) {
@@ -46,18 +46,20 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
   }
   parseResponse(uri, request, response) {
     if (response.status === 429) {
-      return this.delayFetch(uri, request, response);
+      return this.retryRequest(uri, request, response);
     }
     return response;
   }
   dateToEpochSeconds(date) {
     return Math.floor(date.getTime() / 1000);
   }
-  delayFetch(uri, request, response) {
+  retryRequest(uri, request, response) {
     const delayMs = this.getRetryDelayMs(response);
-    const newRequest = this.getDelayedRequest();
+    const newRequest = this.buildRetriedRequest(request, response);
     return new Promise(resolve => {
-      setTimeout(resolve.bind(this, this.fetch.bind(this, uri, newRequest)), delayMs);
+      setTimeout(() => {
+        resolve(this.fetch(uri, newRequest));
+      }, delayMs);
     });
   }
 }
