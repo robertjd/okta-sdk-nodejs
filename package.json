@@ -18,8 +18,8 @@
     "predocs": "rm -rf ./jsdocs && mkdir jsdocs/ && ./utils/make-jsdoc-readme.js > ./jsdocs/jsdoc-temp.md",
     "docs": "./node_modules/.bin/jsdoc src/ -c ./docs/config.json -d ./jsdocs/ -P ./package.json -R ./jsdocs/jsdoc-temp.md -r",
     "test:unit": "mocha test/unit/**/*.js --no-timeouts",
-    "test:it": "nyc --reporter=text --reporter=html mocha test/**/*.js --no-timeouts",
-    "test": "npm run eslint && npm run test:it"
+    "test:it": "nyc --reporter=text --reporter=html mocha test/it/**/*.js --no-timeouts",
+    "test": "npm run eslint && npm run test:it && npm run test:unit && npm run jest"
   },
   "keywords": [],
   "license": "Apache-2.0",
@@ -44,7 +44,6 @@
     "jsdoc": "^3.4.0",
     "mocha": "^3.4.1",
     "nyc": "^10.3.2",
-    "sinon": "^4.5.0",
     "speakeasy": "^2.0.0"
   }
 }
