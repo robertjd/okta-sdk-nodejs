@@ -12,5 +12,5 @@ describe('library export', () => {
   });
   it('should export the default request executor', () => {
     expect(lib.DefaultRequestExecutor).toEqual(DefaultRequestExecutor);
-  })
-})
+  });
+});

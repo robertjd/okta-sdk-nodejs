@@ -3,7 +3,7 @@ const RequestExecutor = require('./request-executor');
 class DefaultOktaRequestExecutor extends RequestExecutor {
   constructor(config = {}) {
     super();
-    this.maxElapsedTime = config.maxElapsedTime || 10000;  // not using this yet
+    this.maxElapsedTime = config.maxElapsedTime || 60000;
     this.rateLimitRandomOffsetMin = config.rateLimitRandomOffsetMin || 1000;
     this.rateLimitRandomOffsetMax = config.rateLimitRandomOffsetMax || 5000;
     this.retryCountHeader = 'X-Okta-Retry-Count';
@@ -12,9 +12,12 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
   fetch(uri, request) {
     return super.fetch(uri, request).then(this.parseResponse.bind(this, uri, request));
   }
-  buildRetriedRequest(request, response) {
+  buildRetryRequest(request, response) {
     const newRequest = Object.assign({}, request);
     const requestId = this.getOktaRequestId(response);
+    if (!request.startTime) {
+      newRequest.startTime = new Date();
+    }
     if (!newRequest.headers) {
       newRequest.headers = {};
     }
@@ -45,7 +48,7 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
     return retryDate.getTime() - nowDate.getTime() + offset;
   }
   parseResponse(uri, request, response) {
-    if (response.status === 429) {
+    if (response.status === 429 && !this.requestIsMaxElapsed(request)) {
       return this.retryRequest(uri, request, response);
     }
     return response;
@@ -53,9 +56,12 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
   dateToEpochSeconds(date) {
     return Math.floor(date.getTime() / 1000);
   }
+  requestIsMaxElapsed(request) {
+    return request.startTime && ((new Date() - request.startTime) > this.maxElapsedTime);
+  }
   retryRequest(uri, request, response) {
     const delayMs = this.getRetryDelayMs(response);
-    const newRequest = this.buildRetriedRequest(request, response);
+    const newRequest = this.buildRetryRequest(request, response);
     return new Promise(resolve => {
       const requestId = this.getOktaRequestId(response);
       this.emit('backoff', request, requestId, delayMs);

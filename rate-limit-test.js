@@ -31,7 +31,7 @@ function go(next){
 function printRateLimit(worker, err) {
   if (err.status === 429) {
     const reset = err.headers.get('x-rate-limit-reset')
-    console.error(worker, new Date(reset * 1000));
+    console.error('429', worker, new Date(reset * 1000));
   }
 }
 
