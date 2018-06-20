@@ -42,13 +42,20 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
     return Math.round(Math.random() * this.rateLimitRandomOffsetMax);
   }
   getRetryDelayMs(response) {
+    // Determine wait time by getting the delta X-Rate-Limit-Reset and the Date header
     const nowDate = new Date(this.getResponseDate(response));
     const retryDate = new Date(parseInt(this.getRateLimitReset(response), 10) * 1000);
     const offset = this.getRandomOffset();
     return retryDate.getTime() - nowDate.getTime() + offset;
   }
+  canRetryRequest(response) {
+    // Validate that we don't have duplicate headers, see OKTA-112507
+    // Duplicate headers are returned by fetch as a comma separated list.
+    const retryHeader = this.getRateLimitReset(response);
+    return !!(retryHeader && retryHeader.indexOf(',') === - 1);
+  }
   parseResponse(uri, request, response) {
-    if (response.status === 429 && !this.requestIsMaxElapsed(request)) {
+    if (response.status === 429 && this.canRetryRequest(response) && !this.requestIsMaxElapsed(request)) {
       return this.retryRequest(uri, request, response);
     }
     return response;
