@@ -5,9 +5,12 @@ class RequestExecutor extends EventEmitter {
   constructor() {
     super();
   }
-  fetch(uri, init) {
-    this.emit('request', uri, init);
-    return isoFetch(uri, init);
+  fetch(request) {
+    this.emit('request', request);
+    return isoFetch(request.url, request).then(response => {
+      this.emit('response', response);
+      return response;
+    });
   }
 }
 

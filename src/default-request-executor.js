@@ -1,5 +1,5 @@
 const RequestExecutor = require('./request-executor');
-
+const deepCopy = require('deep-copy');
 class DefaultOktaRequestExecutor extends RequestExecutor {
   constructor(config = {}) {
     super();
@@ -9,11 +9,11 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
     this.retryCountHeader = 'X-Okta-Retry-Count';
     this.retryForHeader = 'X-Okta-Retry-For';
   }
-  fetch(uri, request) {
-    return super.fetch(uri, request).then(this.parseResponse.bind(this, uri, request));
+  fetch(request) {
+    return super.fetch(request).then(this.parseResponse.bind(this, request));
   }
   buildRetryRequest(request, response) {
-    const newRequest = Object.assign({}, request);
+    const newRequest = deepCopy(request);
     const requestId = this.getOktaRequestId(response);
     if (!request.startTime) {
       newRequest.startTime = new Date();
@@ -54,9 +54,9 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
     const retryHeader = this.getRateLimitReset(response);
     return !!(retryHeader && retryHeader.indexOf(',') === - 1);
   }
-  parseResponse(uri, request, response) {
+  parseResponse(request, response) {
     if (response.status === 429 && this.canRetryRequest(response) && !this.requestIsMaxElapsed(request)) {
-      return this.retryRequest(uri, request, response);
+      return this.retryRequest(request, response);
     }
     return response;
   }
@@ -66,15 +66,15 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
   requestIsMaxElapsed(request) {
     return request.startTime && ((new Date() - request.startTime) > this.maxElapsedTime);
   }
-  retryRequest(uri, request, response) {
+  retryRequest(request, response) {
     const delayMs = this.getRetryDelayMs(response);
     const newRequest = this.buildRetryRequest(request, response);
     return new Promise(resolve => {
       const requestId = this.getOktaRequestId(response);
-      this.emit('backoff', request, requestId, delayMs);
+      this.emit('backoff', request, response, requestId, delayMs);
       setTimeout(() => {
         this.emit('resume', newRequest, requestId);
-        resolve(this.fetch(uri, newRequest));
+        resolve(this.fetch(newRequest));
       }, delayMs);
     });
   }

@@ -27,8 +27,9 @@ describe('DefaultRequestExecutor', () => {
 
   describe('buildRetryRequest', () => {
     it('should set the X-Okta-Retry-For and X-Okta-Retry-Count headers', () => {
-      const request = {
-        method: 'GET'
+      const mockRequest = {
+        method: 'GET',
+        headers: {}
       };
       const mockResponse = buildMockResponse({
         headers: {
@@ -36,9 +37,10 @@ describe('DefaultRequestExecutor', () => {
         }
       });
       const requestExecutor = new DefaultRequestExecutor();
-      const newRequest = requestExecutor.buildRetryRequest(request, mockResponse);
+      const newRequest = requestExecutor.buildRetryRequest(mockRequest, mockResponse);
       expect(newRequest.headers[requestExecutor.retryForHeader]).toBe('foo');
       expect(newRequest.headers[requestExecutor.retryCountHeader]).toBe(1);
+      expect(mockRequest.headers[requestExecutor.retryCountHeader]).toBeUndefined();
     });
 
     it('should increment the X-Okta-Retry-Count header', () => {
@@ -86,7 +88,7 @@ describe('DefaultRequestExecutor', () => {
         }
       });
       const newRequest = requestExecutor.buildRetryRequest(mockRequest, mockResponse);
-      expect(newRequest.startTime).toBe(startTime);
+      expect(newRequest.startTime).toEqual(startTime);
     });
   });
 
@@ -144,7 +146,6 @@ describe('DefaultRequestExecutor', () => {
       const requestExecutor = new DefaultRequestExecutor();
       const now = new Date();
       const retryAfter = new Date(now.getTime() + (1000 * 60)); // one minute in the future
-      const uri = '/foo';
       const mockRequest = { method: 'GET' };
       const mockNewRequest = {};
       requestExecutor.fetch = jest.fn();
@@ -156,9 +157,8 @@ describe('DefaultRequestExecutor', () => {
           date: String(requestExecutor.dateToEpochSeconds(now))
         }
       });
-      await requestExecutor.retryRequest(uri, mockRequest, mockResponse);
-      expect(requestExecutor.fetch.mock.calls[0][0]).toBe(uri);
-      expect(requestExecutor.fetch.mock.calls[0][1]).toBe(mockNewRequest);
+      await requestExecutor.retryRequest(mockRequest, mockResponse);
+      expect(requestExecutor.fetch.mock.calls[0][0]).toBe(mockNewRequest);
     });
   });
 
@@ -196,45 +196,44 @@ describe('DefaultRequestExecutor', () => {
 
     it('should defer to delayFetch for retry-able 429 responses, within max elapsed time', () => {
       const uri = '/foo';
-      const request = { method: 'GET' };
+      const request = { method: 'GET', uri };
       const mockResponse = buildMockResponse({
         status: 429,
         headers: {
           'x-rate-limit-reset': String(new Date())
         }
       });
-      requestExecutor.parseResponse(uri, request, mockResponse);
-      expect(requestExecutor.retryRequest.mock.calls[0][0]).toBe(uri);
-      expect(requestExecutor.retryRequest.mock.calls[0][1]).toBe(request);
-      expect(requestExecutor.retryRequest.mock.calls[0][2]).toBe(mockResponse);
+      requestExecutor.parseResponse(request, mockResponse);
+      expect(requestExecutor.retryRequest.mock.calls[0][0]).toBe(request);
+      expect(requestExecutor.retryRequest.mock.calls[0][1]).toBe(mockResponse);
     });
 
     it('should return 429 responses if max elapsed has passed', async () => {
       const startTime = new Date(new Date().getTime() - 61 * 1000); // 61 seconds in the past
       const request = { method: 'GET', startTime };
       const response = buildMockResponse({ status: 429 });
-      const returnValue = await requestExecutor.parseResponse('/foo', request, response);
+      const returnValue = await requestExecutor.parseResponse(request, response);
       expect(returnValue).toEqual(response);
     });
 
     it('should return 200 responses', async () => {
       const request = { method: 'GET' };
       const response = buildMockResponse({ status: 200 });
-      const returnValue = await requestExecutor.parseResponse('/foo', request, response);
+      const returnValue = await requestExecutor.parseResponse(request, response);
       expect(returnValue).toEqual(response);
     });
 
     it('should return 401 responses', async () => {
       const request = { method: 'GET' };
       const response = buildMockResponse({ status: 401 });
-      const returnValue = await requestExecutor.parseResponse('/foo', request, response);
+      const returnValue = await requestExecutor.parseResponse(request, response);
       expect(returnValue).toEqual(response);
     });
 
     it('should return 500 responses', async () => {
       const request = { method: 'GET' };
       const response = buildMockResponse({ status: 500 });
-      const returnValue = await requestExecutor.parseResponse('/foo', request, response);
+      const returnValue = await requestExecutor.parseResponse(request, response);
       expect(returnValue).toEqual(response);
     });
   });

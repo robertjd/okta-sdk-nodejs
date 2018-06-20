@@ -53,10 +53,11 @@ class Http {
   http(uri, request, context) {
     request = request || {};
     context = context || {};
+    request.url = uri;
     request.headers = Object.assign(this.defaultHeaders, request.headers);
     request.method = request.method || 'get';
     if (!this.cacheMiddleware) {
-      return this.requestExecutor.fetch(uri, request)
+      return this.requestExecutor.fetch(request)
       .then(this.errorFilter);
     }
     const ctx = {
@@ -68,7 +69,7 @@ class Http {
     };
     return this.cacheMiddleware(ctx, () => {
       return Promise.resolve(ctx.res ||
-        this.requestExecutor.fetch(uri, request)
+        this.requestExecutor.fetch(request)
         .then(this.errorFilter)
         .then(res => ctx.res = res)
       );
