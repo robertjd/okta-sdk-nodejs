@@ -16,7 +16,7 @@ npm install @okta/okta-sdk-nodejs
 
 All usage of this SDK begins with the creation of a client, the client handles the authentication and communication with the Okta API.  To create a client, you need to provide it with your Okta Domain and an API token.  To obtain those, see [Getting Started With the Okta APIs](https://developer.okta.com/docs/api/getting_started/api_test_client).
 
-We also opt-in in the default request executor, which will automatically handle rate limiting retries for you:
+We also opt-in in the [default request executor](#default-request-executor), which will automatically handle rate limiting retries for you:
 
 ```javascript
 const okta = require('@okta/okta-sdk-nodejs');
@@ -34,34 +34,43 @@ All interaction with the [Okta Platform API] is done through client methods.  So
 
 https://developer.okta.com/okta-sdk-nodejs/jsdocs/Client.html
 
-## Examples
 
-This library is a wrapper for the [Okta Platform API], which should be referred to as the source-of-truth for what is and isn't possible with the API.  In the following sections we show you how to use your client to perform some common operations with the [Okta Platform API].
 
-* [Users](#users)
-  * [Create a User](#create-a-user)
-  * [Get a User](#get-a-user)
-  * [Update a User](#update-a-user)
-  * [Delete a User](#delete-a-user)
-  * [List All Org Users](#list-all-org-users)
-  * [Search for Users](#search-for-users)
-* [Groups](#groups)
-  * [Create a Group](#create-a-group)
-  * [Assign a User to a Group](#assign-a-user-to-a-group)
-* [Applications](#applications)
-  * [Create an Application](#create-an-application)
-  * [Assign a User to an Application](#assign-a-user-to-an-application)
-  * [Assign a Group to an Application](#assign-a-group-to-an-application)
-* [System Log](#system-log)
-  * [Get Logs](#get-logs)
+## Table of Contents
+
+* [Examples](#examples)
+  * [Users](#users)
+    * [Create a User](#create-a-user)
+    * [Get a User](#get-a-user)
+    * [Update a User](#update-a-user)
+    * [Delete a User](#delete-a-user)
+    * [List All Org Users](#list-all-org-users)
+    * [Search for Users](#search-for-users)
+  * [Groups](#groups)
+    * [Create a Group](#create-a-group)
+    * [Assign a User to a Group](#assign-a-user-to-a-group)
+  * [Applications](#applications)
+    * [Create an Application](#create-an-application)
+    * [Assign a User to an Application](#assign-a-user-to-an-application)
+    * [Assign a Group to an Application](#assign-a-group-to-an-application)
+  * [System Log](#system-log)
+    * [Get Logs](#get-logs)
 * [Collection](#collection)
   * [each](#each)
   * [subscribe](#subscribeconfig)
 * [Configuration](#configuration)
 * [Caching](#caching)
-* [Error Handling](#error-handling)
-  * [Custom Fetch Implementation](#custom-fetch-implementation)
-  * [Method-level Handling](#method-level-handling)
+* [Rate Limiting](#rate-limiting)
+  * [Built-In Retry](#built-in-retry)
+  * [Manual Retry](#manual-retry)
+* [Request Executor](#request-executor)
+  * [Default Request Executor](#default-request-executor)
+  * [Base Request Executor](#base-request-executor)
+
+
+## Examples
+
+This library is a wrapper for the [Okta Platform API], which should be referred to as the source-of-truth for what is and isn't possible with the API.  In the following sections we show you how to use your client to perform some common operations with the [Okta Platform API].
 
 ### Users
 
@@ -416,52 +425,23 @@ A subscription allows you to continue paginating a collection until new items ar
 
 A subscription fetches pages until the first empty page is reached. From that point, it fetches a new page at an interval in milliseconds defined by config (`{ interval: 5000 }`).  This interval defaults to 5000 milliseconds.  A subscription object is returned.  To terminate polling, call `unsubscribe()` on the subscription object.
 
-#### Simple subscription
+Depending on the polling interview you choose, you may run into rate limiting exceptions.  In that case you should enable our rate limiting retry strategy, see [Rate Limiting](#rate-limiting).
+
+#### Simple subscription example
 
 ```javascript
 const subscription = collection.subscribe({
+  interval: 5000,
   next(item) {
-    console.log('Process item');
+    console.log(item);
   },
   error(err) {
-    console.log('Handle error');
-    console.log('Call subscription.unsubscribe() to terminate');
+    // handle error
   }
 });
-```
 
-#### Advanced subscription
-
-Rate-limiting errors are common with subscriptions. Here's one way to handle them:
-
-```javascript
-const subscription = collection.subscribe({
-  interval: 5000, // Time in ms before fetching new logs when all existing logs are read
-  next(item) {
-    console.log('Process item');
-  },
-  error(err) {
-    if (err.status == 429) {
-      const retryEpochMs = parseInt(err.headers.get('x-rate-limit-reset'), 10) * 1000;
-      const retryDate = new Date(retryEpochMs);
-      const nowDate = new Date(err.headers.get('date'));
-      const delayMs = retryDate.getTime() - nowDate.getTime();
-
-      console.log('backoff', retryDate, now, delayMs)
-      return new Promise(resolve => {
-        setTimeout(resolve, delayMs);
-      });
-    }
-
-    if (err.status >= 500) {
-      subscription.unsubscribe();
-    }
-  },
-  complete() {
-    console.log('subscription.unsubscribe() was called');
-    console.log('next() will no longer be triggered');
-  }
-});
+// In the future, unsubscribe as needed:
+subscription.unsubscribe()
 ```
 
 ## Configuration
@@ -585,64 +565,82 @@ async function customMiddleware(ctx, next) {
 }
 ```
 
-## Error Handling
+## Rate Limiting
 
-While interacting with the Okta API, the client may experience the following HTTP errors:
+The Okta API will return 429 responses if too many requests are made within a given time, please see [Rate Limiting at Okta] for a complete list of which endpoints are rate limited.  When a 429 error is received, the `X-Rate-Limit-Reset` header will tell you the time at which you can retry. There are two ways you can handle 429 responses:
 
-* 429 - This is a rate limiting exception, please see [Rate Limiting at Okta] for complete details on our rate limiting strategy.
-* 503 - Service unavailable.  An unlikely situation, see [Okta Trust] for real-time service updates.
+### Built-In Retry
 
-In either case you will want to retry the request.  There are two ways you can handle retries, described below.
+You can configure your client to use the default request executor if you wish to automatically retry on 429 errors, please the [Default Request Executor](#default-request-executor) section.  Note: in the next major version the default request executor will be automatically added to the client.
 
-### Custom Fetch Implementation
+### Manual Retry
 
-If you are running into many rate limiting errors across several APIs we suggest you implement your own [Fetch interface].  The SDK will delegate all HTTP calls to your fetch interface and you must return a promise that resolves to a [Fetch response].  This allows you to write a backoff strategy for your specific needs.
+If you wish to manually retry the request, you can do so by reading the `X-Rate-Limit-Reset` header on the response 429 response.  This will tell you the time at which you can retry.  Beceause this is an absolute time value, we recommend calculating the wait time by using the `Date` header on the response, as it is in sync with the API servers, whereas your local clock may not be.
 
-To provide your own fetch implementation, provide it as the `fetch` option:
+**Header parsing example**
+
+This example shows you how to determine how long you should wait before retrying the request. You then must decide how many times you would like to retry, and how you would like to call the client method again (not shown):
 
 ```javascript
-const client = new okta.Client({
-  orgUrl: 'https://dev-1234.oktapreview.com/'
-  token: 'xYzabc', // Obtained from Developer Dashboard
-  fetch: (uri, init) => {
-    // Perform the the http request defined by input, init
-    // On error, decide how to backoff and retry
-    // You MUST return a promise that resolves to a Fetch response specification
-  }
-});
+client.createUser()
+  .catch(err => {
+    if (err.status == 429) {
+      const retryEpochMs = parseInt(err.headers.get('x-rate-limit-reset'), 10) * 1000;
+      const retryDate = new Date(retryEpochMs);
+      const nowDate = new Date(err.headers.get('date'));
+      const delayMs = retryDate.getTime() - nowDate.getTime();
+      // Wait until delayMs has passed before retrying the request
+    }
+  });
 ```
-
-We suggest evaluating libraries like [node-backoff] and [node-retry] to help with building your strategy.
-
-### Method-level Handling
-
-If you are using the SDK for only a few methods, you may want to simply handle the error in the callback handler and do a simple retry.  All methods that resolve with an error will have the necessary HTTP header information to make a decision about how to retry.  Please see the [Advanced Subscription](#advanced-subscription) example above for header parsing details.
 
 ## Request Executor
 
-This SDK uses the concept of a request executor, a class that is responsible for making HTTP requests to the API and fulfilling the responses for the client. Please see the [RequestExecutor]() class.  The class is a simple proxy for the [Fetch API] and the client will always call it with the form `(uri, request)`
+This SDK uses the concept of a request executor, a class that is responsible for making HTTP requests to the API and fulfilling the responses for the client. Please see the [RequestExecutor]() class.  The class is a simple proxy to the [isomorphic-fetch]() library.
 
-The SDK ships with the base RequestExecutor and DefaultRequestExecutor, or you can design your own request executor by extending one of ours.
+The SDK ships with the base request executor and a default request executor, described in detail below.  We suggest using the default request executor, and will be adding this by default in the next major version.
 
-### DefaultRequestExecutor
+### Default Request Executor
 
-- The [DefaultRequestExecutor]() will automatically retry requests if a 429 error is returned, until `maxElapsedTime`.  If the max time is reached the promise is rejected.  This executor will add a random time offset to each retry, bound by `rateLimitRandomOffsetMin` and `rateLimitRandomOffsetMax`.  All properties are passed to the constructor as millisecond values (defaults shown):
+See [DefaultRequestExecutor]() for the class code.
+
+The default executor extends the [base executor](#base-request-executor), and will automatically retry requests if a 429 error is returned, until `maxElapsedTime` is reached.  If the max time is reached the promise is rejected with the response.  This executor will add a random time offset to each retry, bound by `rateLimitRandomOffsetMin` and `rateLimitRandomOffsetMax`.  All properties are passed to the constructor as millisecond values (defaults shown):
 
 ```javascript
+const defaultRequestExecutor = new okta.DefaultRequestExecutor({
+  maxElapsedTime: 60000,
+  rateLimitRandomOffsetMin: 1000,
+  rateLimitRandomOffsetMax: 5000
+})
+
 const client = new okta.Client({
   orgUrl: 'https://{yourOktaDomain}/'
   token: 'xYzabc',    // Obtained from Developer Dashboard
-  requestExecutor: new okta.DefaultRequestExecutor({
-    maxElapsedTime: 10000,
-    rateLimitRandomOffsetMin: 5000,
-    rateLimitRandomOffsetMax: 1000
-  })
+  requestExecutor: defaultRequestExecutor
 });
 ```
 
-### RequestExecutor
+We recommend using this class, with it's default values, as we believe they are the best set of tradeoffs for the API.  Because the rate limits are different for different endpoints you may need to create multiple clients with different executor configurations.
 
-This is the base executor which does nothing more than delegate the call to our internal fetch interface.  This class has no configuration.  Use this class if you wish to opt-out of the retry behavior that is implemented by DefaultRequestExecutor.
+To help with debugging and logging, the default executor will emit `backoff` and `resume` events:
+
+```javascript
+defaultRequestExecutor.on('backoff', (request, response, requestId, delayMs) => {
+  console.log(`Backoff ${delayMs} ${requestId}, ${request.url} `)
+})
+
+defaultRequestExecutor.on('resume', (request, requestId) => {
+  console.log(`Resume ${requestId} ${request.url} `)
+})
+```
+
+The `requestId` and `delayMs` values are pulled from the request and passed as parameters for convenience.
+
+### Base Request Executor
+
+See [RequestExecutor]() for the class code.
+
+The base request executor does nothing more than delegate the request to the [isomorphic-fetch]() library, and emit the `request` and `response` events.  This class has no configuration.  The client will use this executor if none is provided.  In the next major version you will need to explicitly pass this executor if you wish to opt-out of the default executor:
 
 ```javascript
 const client = new okta.Client({
@@ -652,36 +650,47 @@ const client = new okta.Client({
 });
 ```
 
-### Custom Request Executor
+The base executor also emits `request` and `response` events, these can be useful for debugging and request logging:
+
+```javascript
+const client = new okta.Client({
+  // uses the base executor by default
+});
+
+client.requestExecutor.on('request', (request) => {
+  console.log(`Request ${request.url} `)
+})
+
+client.requestExecutor.on('response', (response) => {
+  console.log(`Response ${response.status} `)
+})
+
+```
+
+### Building a Custom Request Executor
 
 There are two ways you can design your own executor:
 
 - Extend one of our executors.
-- Implement a class that matches the base [RequestExecutor][] by implemeting the `fetch` method.
+- Create your own class the implements the the `fetch` method in the same way that the base [RequestExecutor]() does.
 
-As an example, let's say you want to use our default 429 retry behavior, but you want to add some logging to understand how long requests are taking. To do this, you can extend [DefaultRequestExecutor][], then re-implement the `fetch()` method with your custom logic, while still delegating the actual call to DefaultRequestExecutor:
+As an example, let's say you want to use our default 429 retry behavior, but you want to add some logging to understand how long requests are taking, including retry time. To do this, you can extend [DefaultRequestExecutor](), then re-implement the `fetch()` method with your custom logic, while still delegating the actual call to DefaultRequestExecutor:
 
 ```javascript
-class LoggingExecutorWithRetry extends okta.DefaultRequestExecutor {
-  constructor (configuration) {
-    super(configuration)
-  }
+class DefaultExecutorWithLogging extends okta.DefaultRequestExecutor {
   fetch(request) {
     const start = new Date()
     console.log(`Begin request for ${request.url}`)
     return super.fetch(request).then(response => {
       const timeMs = new Date() - start
-      console.log(`Request complete for ${request.url}`)
-      console.log(`${timeMs}ms`)
+      console.log(`Request complete for ${request.url} in ${timeMs}ms`)
       return response; // Or a promise that will return the response
     })
   }
-};
+}
 
 const client = new okta.Client({
-  requestExecutor: new LoggingExecutorWithRetry({
-    rateLimitRandomOffsetMax: 500
-  })
+  requestExecutor: new DefaultExecutorWithLogging()
 })
 ```
 
@@ -697,9 +706,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) if you would like to propose changes to t
 [Applications: Add Application]: https://developer.okta.com/docs/api/resources/apps.html#add-application
 [Applications: User Operations]:https://developer.okta.com/docs/api/resources/apps.html#application-user-operations
 [Basic Authentication Application]: https://developer.okta.com/docs/api/resources/apps.html#add-basic-authentication-application
+[Default Request Executor]: /src/default-request-executor.js
 [Fetch interface]: https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
 [Fetch response]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [Groups: Add Group]: https://developer.okta.com/docs/api/resources/groups.html#add-group
+[isomorphic-fetch]: https://github.com/matthew-andrews/isomorphic-fetch
 [node-backoff]: https://github.com/MathieuTurcotte/node-backoff
 [node-retry]: https://github.com/tim-kos/node-retry
 [Okta Developer Forum]: https://devforum.okta.com/
@@ -707,6 +718,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) if you would like to propose changes to t
 [Okta Trust]: https://trust.okta.com/
 [Pagination]: https://developer.okta.com/docs/api/getting_started/design_principles.html#pagination
 [Rate Limiting at Okta]: https://developer.okta.com/docs/api/getting_started/rate-limits
+[Request Executor]: /src/request-executor.js
 [System Log API]: https://developer.okta.com/docs/api/resources/system_log
 [Users API Reference]: https://developer.okta.com/docs/api/resources/users.html
 [Users: Create User]: https://developer.okta.com/docs/api/resources/users.html#create-user

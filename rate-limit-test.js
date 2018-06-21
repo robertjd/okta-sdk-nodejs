@@ -1,13 +1,27 @@
 const okta = require('./src');
-const DefaultRequestExecutor = require('./src/default-request-executor');
+const faker = require('faker')
+
+function makeNewUser() {
+  const email = faker.internet.email();
+  return {
+    profile: {
+      firstName: faker.name.firstName(),
+      lastName: faker.name.lastName(),
+      email: email,
+      login: email,
+    },
+    credentials: {
+      password : {
+        value: 'PasswordAbc123'
+      }
+    }
+  };
+}
 
 let reqCount = 0;
 
-const requestExecutor = new DefaultRequestExecutor({
-  // optional configuration
-})
 
-class MyExecutor extends DefaultRequestExecutor {
+class MyExecutor extends okta.DefaultRequestExecutor {
   fetch(request) {
     reqCount+=1;
     return super.fetch(request);
@@ -28,38 +42,66 @@ class LoggingExecutorWithRetry extends okta.DefaultRequestExecutor {
 
 const loggingExecutorWithRetry = new LoggingExecutorWithRetry();
 
-loggingExecutorWithRetry.on('request', request => console.log('request', request));
-loggingExecutorWithRetry.on('response', response => console.log('response', response));
+// loggingExecutorWithRetry.on('request', request => console.log('request', request));
+// loggingExecutorWithRetry.on('response', response => console.log('response', response));
 
 const client = new okta.Client({
-  requestExecutor: loggingExecutorWithRetry
+  // requestExecutor: loggingExecutorWithRetry
 });
 
+client.requestExecutor.on('request', (request) => {
+  console.log(`Request ${request.url} `)
+})
+
+client.requestExecutor.on('response', (response) => {
+  console.log(`Response ${response.status} `)
+})
+
 loggingExecutorWithRetry.on('backoff', (request, response, requestId, delayMs) => {
-  console.log('backoff', request, response.headers, requestId, delayMs)
+  console.log(`Backoff ${delayMs} ${requestId}, ${request.url} `)
 })
 
 loggingExecutorWithRetry.on('resume', (request, requestId) => {
-  console.log('resume', request, requestId)
+  console.log(`Resume ${requestId}, ${request.url} `)
 })
 
 
-function go(next){
-  return client.listApplications().each((user => {
-
-  }))
-  .then(() => {
-    console.log(new Date() + ' collection finished');
-    return next(next)
-  })
-}
-
 // function go(next){
-//   return client.getUser('00udq9c30oSNHtuiG0h7').then(user => {
-//     console.log(`${reqCount} ${user.id}`);
+//   return client.listApplications().each((user => {
+
+//   }))
+//   .then(() => {
+//     console.log(new Date() + ' collection finished');
 //     return next(next)
 //   })
+//   .catch(err => {
+//     console.error(err)
+//   })
 // }
+
+
+// function go(next){
+//   return client.createUser(makeNewUser())
+//   .then(user => {
+//     console.log(`new user ${user.id}`);
+//     return next(next)
+//   })
+//   .catch(err => {
+//     debugger
+//     console.error(err)
+//   })
+// }
+
+function go(next){
+  return client.getApplication('0oadio3tyvuJle6k80h7').then(user => {
+    console.log(`${reqCount} ${user.id}`);
+    return next(next)
+  })
+  .catch(err => {
+    debugger
+    console.error(err)
+  })
+}
 
 // function go(next){
 //   const body = {

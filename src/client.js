@@ -14,7 +14,7 @@ const os = require('os');
 const packageJson = require('../package.json');
 
 const ConfigLoader = require('./config-loader');
-const DefaultRequestExecutor = require('./default-request-executor');
+const RequestExecutor = require('./request-executor');
 const GeneratedApiClient = require('./generated-client');
 const Http = require('./http');
 const DEFAULT_USER_AGENT = `${packageJson.name}/${packageJson.version} node/${process.versions.node} ${os.platform()}/${os.release()}`;
@@ -37,7 +37,7 @@ class Client extends GeneratedApiClient {
 
     const parsedConfig = configLoader.config;
 
-    const requestExecutor = clientConfig.requestExecutor || new DefaultRequestExecutor();
+    this.requestExecutor = clientConfig.requestExecutor || new RequestExecutor();
 
     if (!parsedConfig.client.orgUrl) {
       throw new Error(`Okta Org URL not provided, see ${repoUrl} for usage.`);
@@ -52,7 +52,7 @@ class Client extends GeneratedApiClient {
     this.http = new Http({
       cacheStore: clientConfig.cacheStore,
       cacheMiddleware: clientConfig.cacheMiddleware,
-      requestExecutor
+      requestExecutor: this.requestExecutor
     });
     this.http.defaultHeaders.Authorization = `SSWS ${this.apiToken}`;
     this.http.defaultHeaders['User-Agent'] = parsedConfig.client.userAgent ? parsedConfig.client.userAgent + ' ' + DEFAULT_USER_AGENT : DEFAULT_USER_AGENT;
