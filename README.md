@@ -602,7 +602,7 @@ The SDK ships with the base request executor and a default request executor, des
 
 ### Default Request Executor
 
-See [DefaultRequestExecutor]() for the class code.
+See [DefaultRequestExecutor] for the class code.
 
 The default executor extends the [base executor](#base-request-executor), and will automatically retry requests if a 429 error is returned, until `maxElapsedTime` is reached.  If the max time is reached the promise is rejected with the response.  This executor will add a random time offset to each retry, bound by `rateLimitRandomOffsetMin` and `rateLimitRandomOffsetMax`.  All properties are passed to the constructor as millisecond values (defaults shown):
 
@@ -638,7 +638,7 @@ The `requestId` and `delayMs` values are pulled from the request and passed as p
 
 ### Base Request Executor
 
-See [RequestExecutor]() for the class code.
+See [RequestExecutor] for the class code.
 
 The base request executor does nothing more than delegate the request to the [isomorphic-fetch]() library, and emit the `request` and `response` events.  This class has no configuration.  The client will use this executor if none is provided.  In the next major version you will need to explicitly pass this executor if you wish to opt-out of the default executor:
 
@@ -672,7 +672,7 @@ client.requestExecutor.on('response', (response) => {
 There are two ways you can design your own executor:
 
 - Extend one of our executors.
-- Create your own class the implements the the `fetch` method in the same way that the base [RequestExecutor]() does.
+- Create your own class the implements the the `fetch` method in the same way that the base [RequestExecutor](#base-request-executor) does.
 
 As an example, let's say you want to use our default 429 retry behavior, but you want to add some logging to understand how long requests are taking, including retry time. To do this, you can extend [DefaultRequestExecutor](), then re-implement the `fetch()` method with your custom logic, while still delegating the actual call to DefaultRequestExecutor:
 
@@ -711,8 +711,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) if you would like to propose changes to t
 [Fetch response]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [Groups: Add Group]: https://developer.okta.com/docs/api/resources/groups.html#add-group
 [isomorphic-fetch]: https://github.com/matthew-andrews/isomorphic-fetch
-[node-backoff]: https://github.com/MathieuTurcotte/node-backoff
-[node-retry]: https://github.com/tim-kos/node-retry
 [Okta Developer Forum]: https://devforum.okta.com/
 [Okta Platform API]: https://developer.okta.com/docs/api/getting_started/api_test_client.html
 [Okta Trust]: https://trust.okta.com/
