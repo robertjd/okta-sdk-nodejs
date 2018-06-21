@@ -706,7 +706,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) if you would like to propose changes to t
 [Applications: Add Application]: https://developer.okta.com/docs/api/resources/apps.html#add-application
 [Applications: User Operations]:https://developer.okta.com/docs/api/resources/apps.html#application-user-operations
 [Basic Authentication Application]: https://developer.okta.com/docs/api/resources/apps.html#add-basic-authentication-application
-[Default Request Executor]: /src/default-request-executor.js
+[Default Request Executor]: src/default-request-executor.js
 [Fetch interface]: https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
 [Fetch response]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [Groups: Add Group]: https://developer.okta.com/docs/api/resources/groups.html#add-group
@@ -718,7 +718,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) if you would like to propose changes to t
 [Okta Trust]: https://trust.okta.com/
 [Pagination]: https://developer.okta.com/docs/api/getting_started/design_principles.html#pagination
 [Rate Limiting at Okta]: https://developer.okta.com/docs/api/getting_started/rate-limits
-[Request Executor]: /src/request-executor.js
+[Request Executor]: src/request-executor.js
 [System Log API]: https://developer.okta.com/docs/api/resources/system_log
 [Users API Reference]: https://developer.okta.com/docs/api/resources/users.html
 [Users: Create User]: https://developer.okta.com/docs/api/resources/users.html#create-user
