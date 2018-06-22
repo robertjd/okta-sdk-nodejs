@@ -46,23 +46,23 @@ const loggingExecutorWithRetry = new LoggingExecutorWithRetry();
 // loggingExecutorWithRetry.on('response', response => console.log('response', response));
 
 const client = new okta.Client({
-  // requestExecutor: loggingExecutorWithRetry
+  requestExecutor: new okta.DefaultRequestExecutor()
 });
 
 client.requestExecutor.on('request', (request) => {
-  console.log(`Request ${request.url} `)
+  console.log(`Request ${request.url} ${request.headers['X-Okta-Retry-Count']}`)
 })
 
-client.requestExecutor.on('response', (response) => {
-  console.log(`Response ${response.status} `)
+// client.requestExecutor.on('response', (response) => {
+//   console.log(`Response ${response.status} `)
+// })
+
+client.requestExecutor.on('backoff', (request, response, requestId, delayMs) => {
+  console.log(`Backoff ${delayMs}  ${request.url} ${requestId}`)
 })
 
-loggingExecutorWithRetry.on('backoff', (request, response, requestId, delayMs) => {
-  console.log(`Backoff ${delayMs} ${requestId}, ${request.url} `)
-})
-
-loggingExecutorWithRetry.on('resume', (request, requestId) => {
-  console.log(`Resume ${requestId}, ${request.url} `)
+client.requestExecutor.on('resume', (request, requestId) => {
+  console.log(`Resume ${request.url} ${request.headers['X-Okta-Retry-Count']} ${requestId} `)
 })
 
 
@@ -94,12 +94,8 @@ loggingExecutorWithRetry.on('resume', (request, requestId) => {
 
 function go(next){
   return client.getApplication('0oadio3tyvuJle6k80h7').then(user => {
-    console.log(`${reqCount} ${user.id}`);
+    // console.log(`${reqCount} ${user.id}`);
     return next(next)
-  })
-  .catch(err => {
-    debugger
-    console.error(err)
   })
 }
 
