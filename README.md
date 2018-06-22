@@ -12,6 +12,10 @@ Need help? Contact [developers@okta.com](mailto:developers@okta.com) or use the 
 npm install @okta/okta-sdk-nodejs
 ```
 
+## JsDocs
+
+You can view the entire JsDocs for this project here: https://developer.okta.com/okta-sdk-nodejs/jsdocs/
+
 ## Usage
 
 All usage of this SDK begins with the creation of a client, the client handles the authentication and communication with the Okta API.  To create a client, you need to provide it with your Okta Domain and an API token.  To obtain those, see [Getting Started With the Okta APIs](https://developer.okta.com/docs/api/getting_started/api_test_client).
