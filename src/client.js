@@ -30,6 +30,7 @@ class Client extends GeneratedApiClient {
   constructor(clientConfig) {
     super();
     const configLoader = new ConfigLoader();
+    clientConfig = clientConfig || {};
     configLoader.applyDefaults();
     configLoader.apply({
       client: clientConfig || {}

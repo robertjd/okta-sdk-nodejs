@@ -7,10 +7,10 @@ describe('library export', () => {
   it('should export the Client', () => {
     expect(lib.Client).toEqual(Client);
   });
-  it('should export the base request executor', () => {
+  it('should export the base request executor class', () => {
     expect(lib.RequestExecutor).toEqual(RequestExecutor);
   });
-  it('should export the default request executor', () => {
+  it('should export the default request executor class', () => {
     expect(lib.DefaultRequestExecutor).toEqual(DefaultRequestExecutor);
   });
 });
