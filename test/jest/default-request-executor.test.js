@@ -160,6 +160,28 @@ describe('DefaultRequestExecutor', () => {
       await requestExecutor.retryRequest(mockRequest, mockResponse);
       expect(requestExecutor.fetch.mock.calls[0][0]).toBe(mockNewRequest);
     });
+    it('should emit backoff and resume events', async () => {
+      const requestExecutor = new DefaultRequestExecutor();
+      const mockRequest = { method: 'GET' };
+      let backoffCalled = false;
+      let resumeCalled = false;
+      requestExecutor.fetch = jest.fn();
+      requestExecutor.on('backoff', () => {
+        backoffCalled = true;
+      });
+      requestExecutor.on('resume', () => {
+        resumeCalled = true;
+      });
+      const mockResponse = buildMockResponse({
+        headers: {
+          'x-rate-limit-reset' : 'foo',
+          date: String(requestExecutor.dateToEpochSeconds(new Date()))
+        }
+      });
+      await requestExecutor.retryRequest(mockRequest, mockResponse);
+      expect(backoffCalled).toBe(true);
+      expect(resumeCalled).toBe(true);
+    });
   });
 
   describe('requestIsMaxElapsed', () => {
