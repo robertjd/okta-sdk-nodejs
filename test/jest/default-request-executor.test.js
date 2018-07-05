@@ -126,7 +126,7 @@ describe('DefaultRequestExecutor', () => {
       const mockResponse = buildMockResponse({
         headers: {
           'x-rate-limit-reset' : String(requestExecutor.dateToEpochSeconds(retryAt)),
-          date: now.toGMTString()
+          date: now.toUTCString()
         }
       });
       const delayMs = requestExecutor.getRetryDelayMs(mockResponse);
@@ -144,7 +144,7 @@ describe('DefaultRequestExecutor', () => {
       requestExecutor.retryRequest = jest.fn();
     });
 
-    it('should defer to delayFetch if the request is not timed and not in a max-retry state', () => {
+    it('should defer to retryRequest if the request is not timed and not in a max-retry state', () => {
       const uri = '/foo';
       const request = { method: 'GET', uri };
       const mockResponse = buildMockResponse({
@@ -162,7 +162,6 @@ describe('DefaultRequestExecutor', () => {
       requestExecutor = new DefaultRequestExecutor({
         requestTimeout: 1000
       });
-      requestExecutor.retryRequest = jest.fn();
       const startTime = new Date(new Date().getTime() - 2000);
       const request = { method: 'GET', startTime, uri: '/foo' };
       const mockResponse = buildMockResponse({
@@ -252,23 +251,53 @@ describe('DefaultRequestExecutor', () => {
 
   describe('retryRequest', () => {
 
-    it('should build a new request and send it to fetch', async () => {
+    it('should build a new request and send it to this.fetch', async () => {
       const requestExecutor = new DefaultRequestExecutor();
-      const now = new Date();
-      const retryAfter = new Date(now.getTime() + (1000 * 60)); // one minute in the future
       const mockRequest = { method: 'GET' };
-      const mockNewRequest = {};
       requestExecutor.fetch = jest.fn();
-      requestExecutor.getRetryDelayMs = jest.fn().mockImplementation(() => 1);
-      requestExecutor.buildRetryRequest = jest.fn().mockImplementation(() => mockNewRequest);
+      const now = new Date();
+      const retryAfter = new Date(now.getTime() + 1000); // one second in the future
       const mockResponse = buildMockResponse({
         headers: {
           'x-rate-limit-reset' : String(requestExecutor.dateToEpochSeconds(retryAfter)),
-          date: String(requestExecutor.dateToEpochSeconds(now))
+          date: now.toUTCString()
         }
       });
+      /*
+        retryRequest will call buildRetryRequest to build the object that it
+        sends to this.fetch(), so we use buildRetryRequest() to get an object
+        that is similar to what we expect to be sent to fetch().  But we can't
+        directly compare the startTime property, because it may differ between
+        the two objects.
+      */
+      const expectedNewRequest = requestExecutor.buildRetryRequest(mockRequest, mockResponse);
       await requestExecutor.retryRequest(mockRequest, mockResponse);
-      expect(requestExecutor.fetch.mock.calls[0][0]).toBe(mockNewRequest);
+      const actualNewRequest = requestExecutor.fetch.mock.calls[0][0];
+      expect(Math.abs(expectedNewRequest.startTime - actualNewRequest.startTime)).toBeLessThan(1000);
+      delete expectedNewRequest.startTime;
+      delete actualNewRequest.startTime;
+      expect(expectedNewRequest).toEqual(actualNewRequest);
+    });
+
+    it('should reject if fetch rejects', async () => {
+      const requestExecutor = new DefaultRequestExecutor();
+      const mockRequest = { method: 'GET' };
+      const now = new Date();
+      const retryAfter = new Date(now.getTime() + 1000); // one second in the future
+      const mockResponse = buildMockResponse({
+        headers: {
+          'x-rate-limit-reset' : String(requestExecutor.dateToEpochSeconds(retryAfter)),
+          date: now.toUTCString()
+        }
+      });
+      const err = 'http error';
+      requestExecutor.fetch = jest.fn().mockImplementation(() => Promise.reject(err));
+      let errored = false;
+      await requestExecutor.retryRequest(mockRequest, mockResponse).catch(e => {
+        errored = true;
+        expect(e).toBe(err);
+      });
+      expect(errored).toBe(true);
     });
 
     it('should emit backoff and resume events', async () => {
@@ -286,7 +315,7 @@ describe('DefaultRequestExecutor', () => {
       const mockResponse = buildMockResponse({
         headers: {
           'x-rate-limit-reset' : 'foo',
-          date: String(requestExecutor.dateToEpochSeconds(new Date()))
+          date: new Date().toUTCString()
         }
       });
       await requestExecutor.retryRequest(mockRequest, mockResponse);
