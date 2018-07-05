@@ -12,7 +12,7 @@
 
 const RequestExecutor = require('./request-executor');
 const deepCopy = require('deep-copy');
-class DefaultOktaRequestExecutor extends RequestExecutor {
+class DefaultRequestExecutor extends RequestExecutor {
   constructor(config = {}) {
     super();
     this.requestTimeout = config.requestTimeout || 0;
@@ -93,16 +93,16 @@ class DefaultOktaRequestExecutor extends RequestExecutor {
   retryRequest(request, response) {
     const delayMs = this.getRetryDelayMs(response);
     const newRequest = this.buildRetryRequest(request, response);
+    const requestId = this.getOktaRequestId(response);
     return new Promise(resolve => {
-      const requestId = this.getOktaRequestId(response);
       this.emit('backoff', request, response, requestId, delayMs);
-      setTimeout(() => {
-        this.emit('resume', newRequest, requestId);
-        resolve(this.fetch(newRequest));
-      }, delayMs);
+      setTimeout(resolve, delayMs);
+    }).then(() => {
+      this.emit('resume', newRequest, requestId);
+      return this.fetch(newRequest);
     });
   }
 }
 
-module.exports = DefaultOktaRequestExecutor;
+module.exports = DefaultRequestExecutor;
 
