@@ -334,23 +334,34 @@ describe('DefaultRequestExecutor', () => {
     });
 
     it('should emit backoff and resume events', async () => {
+      const now = new Date();
+      const retryAfter = new Date(now.getTime() + 1000); // one second in the future
       const requestExecutor = new DefaultRequestExecutor();
       const mockRequest = { method: 'GET' };
       let backoffCalled = false;
       let resumeCalled = false;
-      requestExecutor.fetch = jest.fn();
-      requestExecutor.on('backoff', () => {
-        backoffCalled = true;
-      });
-      requestExecutor.on('resume', () => {
-        resumeCalled = true;
-      });
       const mockResponse = buildMockResponse({
         headers: {
-          'x-rate-limit-reset' : 'foo',
-          date: new Date().toUTCString()
+          'x-rate-limit-reset' : String(requestExecutor.dateToEpochSeconds(retryAfter)),
+          date: now.toUTCString(),
+          'x-okta-request-id': 'foo'
         }
       });
+      requestExecutor.fetch = jest.fn(() => Promise.resolve(mockResponse));
+      requestExecutor.on('backoff', (request, response, requestId, delayMs) => {
+        expect(request).toBe(mockRequest);
+        expect(response).toBe(mockResponse);
+        expect(requestId).toBe('foo');
+        expect(delayMs).toBe(retryAfter - now + 1000);
+        backoffCalled = true;
+      });
+      requestExecutor.on('resume', (newRequest, requestId) => {
+        expect(newRequest.headers[requestExecutor.retryCountHeader]).toEqual(1);
+        expect(newRequest.headers[requestExecutor.retryForHeader]).toEqual('foo');
+        expect(requestId).toBe('foo');
+        resumeCalled = true;
+      });
+
       await requestExecutor.retryRequest(mockRequest, mockResponse);
       expect(backoffCalled).toBe(true);
       expect(resumeCalled).toBe(true);
