@@ -1,3 +1,4 @@
+const RequestExecutor = require('../../src/request-executor');
 const DefaultRequestExecutor = require('../../src/default-request-executor');
 
 function buildMockResponse(response) {
@@ -114,6 +115,38 @@ describe('DefaultRequestExecutor', () => {
         }
       });
       expect(requestExecutor.canRetryRequest(mockResponse)).toBe(false);
+    });
+  });
+
+  describe('fetch', () => {
+    const fetchProto = RequestExecutor.prototype.fetch;
+
+    afterEach(() => {
+      RequestExecutor.prototype.fetch = fetchProto; // restore original function
+    });
+
+    it('delegates the request to RequestExecutor.fetch() and the response to this.parseResponse()', async () => {
+      const request = { url: '/foo' };
+      const response = { status: 200 };
+      RequestExecutor.prototype.fetch = jest.fn().mockImplementation(() => Promise.resolve(response));
+      const requestExecutor = new DefaultRequestExecutor();
+      requestExecutor.parseResponse = jest.fn();
+      await requestExecutor.fetch(request);
+      expect(RequestExecutor.prototype.fetch.mock.calls[0][0]).toBe(request);
+      expect(requestExecutor.parseResponse.mock.calls[0][0]).toBe(request);
+      expect(requestExecutor.parseResponse.mock.calls[0][1]).toBe(response);
+    });
+
+    it('rejects if RequestExecutor.fetch() rejects', async () => {
+      const err = 'http error';
+      let errored = false;
+      RequestExecutor.prototype.fetch = jest.fn().mockImplementation(() => Promise.reject(err));
+      const requestExecutor = new DefaultRequestExecutor();
+      await requestExecutor.fetch({}).catch(e => {
+        errored = true;
+        expect(e).toBe(err);
+      });
+      expect(errored).toBe(true);
     });
   });
 
