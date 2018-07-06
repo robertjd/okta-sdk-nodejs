@@ -24,4 +24,3 @@ class RequestExecutor extends EventEmitter {
 }
 
 module.exports = RequestExecutor;
-
