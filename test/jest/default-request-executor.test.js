@@ -19,6 +19,20 @@ describe('DefaultRequestExecutor', () => {
     it('should set the default requestTimeout to 0', () => {
       expect(new DefaultRequestExecutor().requestTimeout).toBe(0);
     });
+
+    it('should set the default maxRetries to 2', () => {
+      expect(new DefaultRequestExecutor().maxRetries).toBe(2);
+    });
+
+    it('should throw if requestTimeout is less than 0', () => {
+      expect(() => new DefaultRequestExecutor({ requestTimeout: -1}))
+      .toThrow('okta.client.rateLimit.requestTimeout provided as -1 but must be 0 (disabled) or greater than zero');
+    });
+
+    it('should throw if maxRetries is less than 0', () => {
+      expect(() => new DefaultRequestExecutor({ maxRetries: -1}))
+      .toThrow('okta.client.rateLimit.maxRetries provided as -1 but must be 0 (disabled) or greater than zero');
+    });
   });
 
   describe('buildRetryRequest', () => {
@@ -269,16 +283,34 @@ describe('DefaultRequestExecutor', () => {
       const result = requestExecutor.requestHasTimedOut(mockRequest);
       expect(result).toBe(true);
     });
+  });
 
-    it('should return true if the request has timed out', () => {
+  describe('maxRetriesReached', () => {
+
+    it('should return true if maxRetries is greater than 0 and the retry limit is reached', () => {
       const requestExecutor = new DefaultRequestExecutor({
-        requestTimeout: 1000
+        maxRetries: 1
       });
       const mockRequest = {
-        startTime: new Date(new Date().getTime() - 2000)
+        startTime: new Date(new Date().getTime() - 2000),
+        headers: {}
       };
-      const result = requestExecutor.requestHasTimedOut(mockRequest);
+      mockRequest.headers[requestExecutor.retryCountHeader] = '1';
+      const result = requestExecutor.maxRetriesReached(mockRequest);
       expect(result).toBe(true);
+    });
+
+    it('should return false if maxRetries is zero', () => {
+      const requestExecutor = new DefaultRequestExecutor({
+        maxRetries: 0
+      });
+      const mockRequest = {
+        startTime: new Date(new Date().getTime() - 2000),
+        headers: {}
+      };
+      mockRequest.headers[requestExecutor.retryCountHeader] = '2';
+      const result = requestExecutor.maxRetriesReached(mockRequest);
+      expect(result).toBe(false);
     });
   });
 

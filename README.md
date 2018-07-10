@@ -606,13 +606,16 @@ This SDK uses the concept of a request executor, a class that is responsible for
 
 The SDK ships with the base request executor and a default request executor, described in detail below.  We suggest using the default request executor, and will be adding this by default in the next major version.
 
-You can create your own executor or extend one of ours, which allows you to define global logic for all HTTP requests made by this library.  Please see the [Building a Custom Request Executor](#building-a-custom-request-executor) section below for more information.
+You can create your own executor or extend one of ours, which allows you to define global logic for all HTTP requests made by this library.  Please see the [Building a Custom Request Executor](#building-a-custom-request-executor) section for more information.
 
 ### Default Request Executor
 
 See [DefaultRequestExecutor] for the class code.
 
-The default executor extends the [base executor](#base-request-executor), and will automatically retry requests if a 429 error is returned, until `maxRetries` (default of 2) or `requestTimeout` is reached (not specified by default). The defaults are shown here:
+The default executor extends the [base executor](#base-request-executor) and will automatically retry requests if a 429 error is returned.  Using these configuration options, you can configure your retry tolerance for your specific use case:
+
+* **`maxRetries`** - The number of times to retry, defaults to 2.  Set to 0 if you do not want to limit the number of retries.
+* **`requestTimeout`** - How long to wait before giving up on retires, defined as milliseconds.  Defaults to 0, which disables the request timeout.
 
 ```javascript
 const defaultRequestExecutor = new okta.DefaultRequestExecutor({
